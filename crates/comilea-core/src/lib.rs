@@ -1014,9 +1014,12 @@ impl Machine {
                 6
             }
             0x60 => {
-                let lo = self.pop();
-                let hi = self.pop();
+                self.implied_cycle();
+                self.traced_read(0x0100 | u16::from(self.cpu.sp));
+                let lo = self.pop_traced();
+                let hi = self.pop_traced();
                 self.cpu.pc = u16::from_le_bytes([lo, hi]).wrapping_add(1);
+                self.traced_read(self.cpu.pc);
                 6
             }
             0x10 => self.branch(self.cpu.status & FLAG_NEGATIVE == 0),
