@@ -1022,10 +1022,14 @@ impl Machine {
                 self.cpu.status |= FLAG_CARRY;
             }
             self.cpu.a = (hi << 4) | (lo & 0x0f);
+            // NMOS 6502 N/Z are derived after the low-digit decimal correction
+            // but before the final high-digit correction.
+            let flag_result = (hi << 4) | (lo & 0x0f);
+            self.set_zn(flag_result);
         } else {
             self.cpu.a = result;
+            self.set_zn(result);
         }
-        self.set_zn(result);
     }
 
     fn sbc(&mut self, value: u8) {
