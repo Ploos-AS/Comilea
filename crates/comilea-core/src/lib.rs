@@ -2,6 +2,8 @@
 
 const FLAG_CARRY: u8 = 0x01;
 const FLAG_ZERO: u8 = 0x02;
+const FLAG_INTERRUPT_DISABLE: u8 = 0x04;
+const FLAG_DECIMAL: u8 = 0x08;
 const FLAG_OVERFLOW: u8 = 0x40;
 const FLAG_NEGATIVE: u8 = 0x80;
 
@@ -88,6 +90,25 @@ impl Machine {
             0xa0 => { let value = self.fetch_byte(); self.cpu.y = value; self.set_zn(value); 2 }
             0x69 => { let value = self.fetch_byte(); self.adc(value); 2 }
             0xe9 => { let value = self.fetch_byte(); self.sbc(value); 2 }
+            0x29 => { let value = self.fetch_byte(); self.cpu.a &= value; self.set_zn(self.cpu.a); 2 }
+            0x09 => { let value = self.fetch_byte(); self.cpu.a |= value; self.set_zn(self.cpu.a); 2 }
+            0x49 => { let value = self.fetch_byte(); self.cpu.a ^= value; self.set_zn(self.cpu.a); 2 }
+            0xc9 => { let value = self.fetch_byte(); self.compare(self.cpu.a, value); 2 }
+            0xe0 => { let value = self.fetch_byte(); self.compare(self.cpu.x, value); 2 }
+            0xc0 => { let value = self.fetch_byte(); self.compare(self.cpu.y, value); 2 }
+            0x24 => { let address = self.addr_zero_page(); self.bit(self.read(address)); 3 }
+            0x2c => { let address = self.addr_absolute(); self.bit(self.read(address)); 4 }
+            0x0a => { self.cpu.a = self.asl(self.cpu.a); 2 }
+            0x4a => { self.cpu.a = self.lsr(self.cpu.a); 2 }
+            0x2a => { self.cpu.a = self.rol(self.cpu.a); 2 }
+            0x6a => { self.cpu.a = self.ror(self.cpu.a); 2 }
+            0x18 => { self.cpu.status &= !FLAG_CARRY; 2 }
+            0x38 => { self.cpu.status |= FLAG_CARRY; 2 }
+            0x58 => { self.cpu.status &= !FLAG_INTERRUPT_DISABLE; 2 }
+            0x78 => { self.cpu.status |= FLAG_INTERRUPT_DISABLE; 2 }
+            0xb8 => { self.cpu.status &= !FLAG_OVERFLOW; 2 }
+            0xd8 => { self.cpu.status &= !FLAG_DECIMAL; 2 }
+            0xf8 => { self.cpu.status |= FLAG_DECIMAL; 2 }
             0x85 => { let address = self.addr_zero_page(); self.write(address, self.cpu.a); 3 }
             0x95 => { let address = self.addr_zero_page_x(); self.write(address, self.cpu.a); 4 }
             0x8d => { let address = self.addr_absolute(); self.write(address, self.cpu.a); 4 }
@@ -216,6 +237,45 @@ impl Machine {
 
     fn sbc(&mut self, value: u8) {
         self.adc(!value);
+    }
+
+    fn compare(&mut self, register: u8, value: u8) {
+        let result = register.wrapping_sub(value);
+        self.cpu.status &= !FLAG_CARRY;
+        if register >= value { self.cpu.status |= FLAG_CARRY; }
+        self.set_zn(result);
+    }
+
+    fn bit(&mut self, value: u8) {
+        self.cpu.status &= !(FLAG_ZERO | FLAG_OVERFLOW | FLAG_NEGATIVE);
+        if self.cpu.a & value == 0 { self.cpu.status |= FLAG_ZERO; }
+        self.cpu.status |= value & (FLAG_OVERFLOW | FLAG_NEGATIVE);
+    }
+
+    fn asl(&mut self, value: u8) -> u8 {
+        self.cpu.status = (self.cpu.status & !FLAG_CARRY) | ((value >> 7) & FLAG_CARRY);
+        let result = value << 1; self.set_zn(result); result
+    }
+
+    fn lsr(&mut self, value: u8) -> u8 {
+        self.cpu.status = (self.cpu.status & !FLAG_CARRY) | (value & FLAG_CARRY);
+        let result = value >> 1; self.set_zn(result); result
+    }
+
+    fn rol(&mut self, value: u8) -> u8 {
+        let carry_in = self.cpu.status & FLAG_CARRY;
+        let carry_out = (value >> 7) & FLAG_CARRY;
+        let result = (value << 1) | carry_in;
+        self.cpu.status = (self.cpu.status & !FLAG_CARRY) | carry_out;
+        self.set_zn(result); result
+    }
+
+    fn ror(&mut self, value: u8) -> u8 {
+        let carry_in = (self.cpu.status & FLAG_CARRY) << 7;
+        let carry_out = value & FLAG_CARRY;
+        let result = (value >> 1) | carry_in;
+        self.cpu.status = (self.cpu.status & !FLAG_CARRY) | carry_out;
+        self.set_zn(result); result
     }
 
     fn set_zn(&mut self, value: u8) {
@@ -358,6 +418,35 @@ mod tests {
         assert_eq!(m.cpu().a, 0x80);
         assert_eq!(m.cpu().x, 0x7f);
         assert_eq!(m.cpu().y, 0x7f);
+    }
+
+    #[test]
+    fn logical_compare_and_bit_operations_update_flags() {
+        let mut m = machine_with(&[0xa9, 0xf0, 0x29, 0x0f, 0x09, 0x80, 0x49, 0xff, 0xc9, 0x7f, 0x24, 0x10]);
+        m.write(0x0010, 0xc0);
+        for _ in 0..6 { m.step().unwrap(); }
+        assert_eq!(m.cpu().a, 0x7f);
+        assert_ne!(m.cpu().status & FLAG_CARRY, 0);
+        assert_ne!(m.cpu().status & FLAG_OVERFLOW, 0);
+        assert_ne!(m.cpu().status & FLAG_NEGATIVE, 0);
+    }
+
+    #[test]
+    fn accumulator_shifts_rotate_through_carry() {
+        let mut m = machine_with(&[0xa9, 0x81, 0x0a, 0x6a, 0x4a, 0x38, 0x2a]);
+        for _ in 0..7 { m.step().unwrap(); }
+        assert_eq!(m.cpu().a, 0x81);
+    }
+
+    #[test]
+    fn flag_instructions_toggle_control_flags() {
+        let mut m = machine_with(&[0x38, 0x78, 0xf8, 0x18, 0x58, 0xd8]);
+        for _ in 0..3 { m.step().unwrap(); }
+        assert_ne!(m.cpu().status & FLAG_CARRY, 0);
+        assert_ne!(m.cpu().status & FLAG_INTERRUPT_DISABLE, 0);
+        assert_ne!(m.cpu().status & FLAG_DECIMAL, 0);
+        for _ in 0..3 { m.step().unwrap(); }
+        assert_eq!(m.cpu().status & (FLAG_CARRY | FLAG_INTERRUPT_DISABLE | FLAG_DECIMAL), 0);
     }
 
     #[test]
