@@ -1027,13 +1027,23 @@ impl Machine {
     fn addr_absolute_x(&mut self) -> (u16, bool) {
         let base = self.fetch_word();
         let address = base.wrapping_add(u16::from(self.cpu.x));
-        (address, (base & 0xff00) != (address & 0xff00))
+        let crossed = (base & 0xff00) != (address & 0xff00);
+        if crossed {
+            let dummy = (base & 0xff00) | (address & 0x00ff);
+            self.traced_read(dummy);
+        }
+        (address, crossed)
     }
 
     fn addr_absolute_y(&mut self) -> (u16, bool) {
         let base = self.fetch_word();
         let address = base.wrapping_add(u16::from(self.cpu.y));
-        (address, (base & 0xff00) != (address & 0xff00))
+        let crossed = (base & 0xff00) != (address & 0xff00);
+        if crossed {
+            let dummy = (base & 0xff00) | (address & 0x00ff);
+            self.traced_read(dummy);
+        }
+        (address, crossed)
     }
 
     fn read_zero_page_word(&self, pointer: u8) -> u16 {
