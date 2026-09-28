@@ -82,6 +82,8 @@ impl Machine {
             0xad => { let address = self.addr_absolute(); self.load_a(self.read(address)); 4 }
             0xbd => { let (address, crossed) = self.addr_absolute_x(); self.load_a(self.read(address)); 4 + u64::from(crossed) }
             0xb9 => { let (address, crossed) = self.addr_absolute_y(); self.load_a(self.read(address)); 4 + u64::from(crossed) }
+            0xa1 => { let address = self.addr_indexed_indirect(); self.load_a(self.read(address)); 6 }
+            0xb1 => { let (address, crossed) = self.addr_indirect_indexed(); self.load_a(self.read(address)); 5 + u64::from(crossed) }
             0xa2 => { let value = self.fetch_byte(); self.cpu.x = value; self.set_zn(value); 2 }
             0xa0 => { let value = self.fetch_byte(); self.cpu.y = value; self.set_zn(value); 2 }
             0x69 => { let value = self.fetch_byte(); self.adc(value); 2 }
@@ -91,7 +93,20 @@ impl Machine {
             0x8d => { let address = self.addr_absolute(); self.write(address, self.cpu.a); 4 }
             0x9d => { let (address, _) = self.addr_absolute_x(); self.write(address, self.cpu.a); 5 }
             0x99 => { let (address, _) = self.addr_absolute_y(); self.write(address, self.cpu.a); 5 }
+            0x81 => { let address = self.addr_indexed_indirect(); self.write(address, self.cpu.a); 6 }
+            0x91 => { let (address, _) = self.addr_indirect_indexed(); self.write(address, self.cpu.a); 6 }
+            0xaa => { self.cpu.x = self.cpu.a; self.set_zn(self.cpu.x); 2 }
+            0x8a => { self.cpu.a = self.cpu.x; self.set_zn(self.cpu.a); 2 }
+            0xa8 => { self.cpu.y = self.cpu.a; self.set_zn(self.cpu.y); 2 }
+            0x98 => { self.cpu.a = self.cpu.y; self.set_zn(self.cpu.a); 2 }
+            0xba => { self.cpu.x = self.cpu.sp; self.set_zn(self.cpu.x); 2 }
+            0x9a => { self.cpu.sp = self.cpu.x; 2 }
+            0xe8 => { self.cpu.x = self.cpu.x.wrapping_add(1); self.set_zn(self.cpu.x); 2 }
+            0xca => { self.cpu.x = self.cpu.x.wrapping_sub(1); self.set_zn(self.cpu.x); 2 }
+            0xc8 => { self.cpu.y = self.cpu.y.wrapping_add(1); self.set_zn(self.cpu.y); 2 }
+            0x88 => { self.cpu.y = self.cpu.y.wrapping_sub(1); self.set_zn(self.cpu.y); 2 }
             0x4c => { self.cpu.pc = self.fetch_word(); 3 }
+            0x6c => { self.cpu.pc = self.addr_jmp_indirect(); 5 }
             0x20 => { let target = self.fetch_word(); let return_pc = self.cpu.pc.wrapping_sub(1); self.push((return_pc >> 8) as u8); self.push(return_pc as u8); self.cpu.pc = target; 6 }
             0x60 => { let lo = self.pop(); let hi = self.pop(); self.cpu.pc = u16::from_le_bytes([lo, hi]).wrapping_add(1); 6 }
             0xd0 => self.branch(self.cpu.status & FLAG_ZERO == 0),
@@ -135,6 +150,33 @@ impl Machine {
         let base = self.fetch_word();
         let address = base.wrapping_add(u16::from(self.cpu.y));
         (address, (base & 0xff00) != (address & 0xff00))
+    }
+
+    fn read_zero_page_word(&self, pointer: u8) -> u16 {
+        let lo = self.read(u16::from(pointer));
+        let hi = self.read(u16::from(pointer.wrapping_add(1)));
+        u16::from_le_bytes([lo, hi])
+    }
+
+    fn addr_indexed_indirect(&mut self) -> u16 {
+        let pointer = self.fetch_byte().wrapping_add(self.cpu.x);
+        self.read_zero_page_word(pointer)
+    }
+
+    fn addr_indirect_indexed(&mut self) -> (u16, bool) {
+        let pointer = self.fetch_byte();
+        let base = self.read_zero_page_word(pointer);
+        let address = base.wrapping_add(u16::from(self.cpu.y));
+        (address, (base & 0xff00) != (address & 0xff00))
+    }
+
+    fn addr_jmp_indirect(&mut self) -> u16 {
+        let pointer = self.fetch_word();
+        let lo = self.read(pointer);
+        // NMOS 6502/6510 wraps the high-byte fetch within the same page.
+        let hi_address = (pointer & 0xff00) | u16::from((pointer as u8).wrapping_add(1));
+        let hi = self.read(hi_address);
+        u16::from_le_bytes([lo, hi])
     }
 
     fn load_a(&mut self, value: u8) {
@@ -288,6 +330,34 @@ mod tests {
         m.step().unwrap(); m.step().unwrap();
         assert_eq!(m.step(), Ok(4)); assert_eq!(m.read(0x0000), 0x5a);
         assert_eq!(m.step(), Ok(5)); assert_eq!(m.read(0x2101), 0x5a);
+    }
+
+    #[test]
+    fn indirect_addressing_wraps_zero_page_and_counts_page_cross() {
+        let mut m = machine_with(&[0xa2, 0x01, 0xa1, 0xff, 0xa0, 0x01, 0xb1, 0x10]);
+        m.write(0x0000, 0x00); m.write(0x0001, 0x20); m.write(0x2000, 0x66);
+        m.write(0x0010, 0xff); m.write(0x0011, 0x20); m.write(0x2100, 0x77);
+        m.step().unwrap();
+        assert_eq!(m.step(), Ok(6)); assert_eq!(m.cpu().a, 0x66);
+        m.step().unwrap();
+        assert_eq!(m.step(), Ok(6)); assert_eq!(m.cpu().a, 0x77);
+    }
+
+    #[test]
+    fn jmp_indirect_preserves_nmos_page_wrap_quirk() {
+        let mut m = machine_with(&[0x6c, 0xff, 0x20]);
+        m.write(0x20ff, 0x34); m.write(0x2000, 0x12); m.write(0x2100, 0x99);
+        assert_eq!(m.step(), Ok(5));
+        assert_eq!(m.cpu().pc, 0x1234);
+    }
+
+    #[test]
+    fn transfers_and_index_updates_set_expected_state() {
+        let mut m = machine_with(&[0xa9, 0x7f, 0xaa, 0xe8, 0x8a, 0xa8, 0x88, 0xca]);
+        for _ in 0..8 { m.step().unwrap(); }
+        assert_eq!(m.cpu().a, 0x80);
+        assert_eq!(m.cpu().x, 0x7f);
+        assert_eq!(m.cpu().y, 0x7f);
     }
 
     #[test]
