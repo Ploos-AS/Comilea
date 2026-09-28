@@ -1182,8 +1182,14 @@ impl Machine {
             return 2;
         }
         let old = self.cpu.pc;
+        self.traced_read(old);
         self.cpu.pc = self.cpu.pc.wrapping_add_signed(i16::from(offset));
-        3 + u64::from((old & 0xff00) != (self.cpu.pc & 0xff00))
+        let crossed = (old & 0xff00) != (self.cpu.pc & 0xff00);
+        if crossed {
+            let dummy = (old & 0xff00) | (self.cpu.pc & 0x00ff);
+            self.traced_read(dummy);
+        }
+        3 + u64::from(crossed)
     }
 
     fn interrupt(&mut self, vector: u16) {
