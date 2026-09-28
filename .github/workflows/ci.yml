@@ -54,13 +54,29 @@ jobs:
           test "$(wc -c < /tmp/6502_decimal_test.bin)" -eq 234
       - name: Bruce Clark NMOS decimal conformance
         run: cargo run -p comilea-core --example decimal6502 -- /tmp/6502_decimal_test.bin
-      - name: Fetch pinned SingleStep LDA immediate vectors
+      - name: Fetch pinned SingleStep representative vectors
         run: |
-          curl --fail --location --retry 3 \
-            -o /tmp/a9.json \
-            https://raw.githubusercontent.com/SingleStepTests/65x02/2f6980a2d95757486c7bee24355c360e40e2a224/6502/v1/a9.json
-          test "$(git hash-object /tmp/a9.json)" = 56b3774c21c9a13114879dd60c66390355365198
-      - name: SingleStep LDA immediate conformance
-        run: cargo run -p comilea-core --example singlestep6502 -- /tmp/a9.json
+          base=https://raw.githubusercontent.com/SingleStepTests/65x02/2f6980a2d95757486c7bee24355c360e40e2a224/6502/v1
+          while read -r opcode blob; do
+            curl --fail --location --retry 3 -o "/tmp/$opcode.json" "$base/$opcode.json"
+            test "$(git hash-object "/tmp/$opcode.json")" = "$blob"
+          done <<'EOF'
+          a9 56b3774c21c9a13114879dd60c66390355365198
+          69 95dd858e61aef6a87ad9909e4f9861a099b26899
+          e9 756daaa6d4de76d2253c79c9fe09655d4e5b49e8
+          d0 c8742ac30342b111b3453a498c043423b95d0193
+          48 de3556c08bfbf47a62e1e17daa1d4a7c5f12774b
+          68 7dd69146268540a4f3e60ec46fabe5e8abea0ab4
+          06 c5a2a542e0856462152dcd6e9b39a8e7069d2c93
+          b1 d161c5b41d8ff50e262798907ac36eea9f4ebd3e
+          00 17b96cfd880f65c8f97c76becd146ac083f8b6b6
+          40 90534ecfa9514b158b75298a0b5f3116314e33b7
+          EOF
+      - name: SingleStep representative conformance
+        run: |
+          for opcode in a9 69 e9 d0 48 68 06 b1 00 40; do
+            echo "== opcode $opcode =="
+            cargo run -p comilea-core --example singlestep6502 -- "/tmp/$opcode.json"
+          done
       - name: Headless smoke test
         run: cargo run -p comilea-cli -- --cycles 1000
