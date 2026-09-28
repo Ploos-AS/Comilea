@@ -71,10 +71,30 @@ jobs:
           b1 d161c5b41d8ff50e262798907ac36eea9f4ebd3e
           00 17b96cfd880f65c8f97c76becd146ac083f8b6b6
           40 90534ecfa9514b158b75298a0b5f3116314e33b7
+          01 3d27dfe43df7ab4aa99cdc3bd0b7b4f8bdbf0ad1
+          05 a84e67d36108a87f2346ef586b8dfb6dcc4a13a5
+          08 1cae6e6d80ed449ee73e315704365cab55ff2275
+          09 46f9581a3bc5da6da729aa833fca297b683e00b5
+          0a c4fbdae1cf4d46f9989725a19062682960915c01
+          0d c15ce08d6b5c6840dfc7bc44f1c86aaf5c5bff38
+          0e 5b595b41b61edb16eede671f65868cb4434b8794
+          10 ef7cf66c07940e59c5c1c08628ae417d600cbe52
+          11 ea857ffa12ff043be0f24605777c00cabf60c52c
+          15 2e8b3bcc0ef1a31b6f045e8c5879f44c66444b03
+          16 ee333ecef18ef81557c59200fd72b3ea914bf892
+          18 7dfd3936fb9d7c117b5ac1ceb9f82592da1cff3a
+          19 c36345f727ca3615afe0f7e40a9c463ecd7a74aa
+          1d 0a954ae34e265ca7f1138327630e27caea3bf28b
+          1e c28027d76d0ec5e6d45e832f1c3765a4d8b0ad14
+          20 74bfc1d58b83c2542b0b947456a027c4a22f1d38
+          21 c095a154c22688857b91321b9fa83f59ee4a78ec
+          24 92308f5de474e4fdea83472f33ac654340bd4857
+          25 cbe37655be7c817843d12455e33bf4c59c5df879
+          26 c9f0e6605e628a20221353508eed0e23e34d0f46
           EOF
       - name: SingleStep representative conformance
         run: |
-          for opcode in a9 69 e9 d0 48 68 06 b1 00 40; do
+          for opcode in a9 69 e9 d0 48 68 06 b1 00 40 01 05 08 09 0a 0d 0e 10 11 15 16 18 19 1d 1e 20 21 24 25 26; do
             echo "== opcode $opcode =="
             cargo run -p comilea-core --example singlestep6502 -- "/tmp/$opcode.json"
           done
