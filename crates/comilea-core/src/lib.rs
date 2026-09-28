@@ -207,32 +207,38 @@ impl Machine {
             }
             0xb5 => {
                 let address = self.addr_zero_page_x();
-                self.load_a(self.read(address));
+                let value = self.traced_read(address);
+                self.load_a(value);
                 4
             }
             0xad => {
                 let address = self.addr_absolute();
-                self.load_a(self.read(address));
+                let value = self.traced_read(address);
+                self.load_a(value);
                 4
             }
             0xbd => {
                 let (address, crossed) = self.addr_absolute_x();
-                self.load_a(self.read(address));
+                let value = self.traced_read(address);
+                self.load_a(value);
                 4 + u64::from(crossed)
             }
             0xb9 => {
                 let (address, crossed) = self.addr_absolute_y();
-                self.load_a(self.read(address));
+                let value = self.traced_read(address);
+                self.load_a(value);
                 4 + u64::from(crossed)
             }
             0xa1 => {
                 let address = self.addr_indexed_indirect();
-                self.load_a(self.read(address));
+                let value = self.traced_read(address);
+                self.load_a(value);
                 6
             }
             0xb1 => {
                 let (address, crossed) = self.addr_indirect_indexed();
-                self.load_a(self.read(address));
+                let value = self.traced_read(address);
+                self.load_a(value);
                 5 + u64::from(crossed)
             }
             0xa2 => {
@@ -248,17 +254,20 @@ impl Machine {
             }
             0xb6 => {
                 let a = self.addr_zero_page_y();
-                self.load_x(self.read(a));
+                let value = self.traced_read(a);
+                self.load_x(value);
                 4
             }
             0xae => {
                 let a = self.addr_absolute();
-                self.load_x(self.read(a));
+                let value = self.traced_read(a);
+                self.load_x(value);
                 4
             }
             0xbe => {
                 let (a, crossed) = self.addr_absolute_y();
-                self.load_x(self.read(a));
+                let value = self.traced_read(a);
+                self.load_x(value);
                 4 + u64::from(crossed)
             }
             0xa0 => {
@@ -274,17 +283,20 @@ impl Machine {
             }
             0xb4 => {
                 let a = self.addr_zero_page_x();
-                self.load_y(self.read(a));
+                let value = self.traced_read(a);
+                self.load_y(value);
                 4
             }
             0xac => {
                 let a = self.addr_absolute();
-                self.load_y(self.read(a));
+                let value = self.traced_read(a);
+                self.load_y(value);
                 4
             }
             0xbc => {
                 let (a, crossed) = self.addr_absolute_x();
-                self.load_y(self.read(a));
+                let value = self.traced_read(a);
+                self.load_y(value);
                 4 + u64::from(crossed)
             }
             0x69 => {
