@@ -1009,11 +1009,15 @@ impl Machine {
     }
 
     fn addr_zero_page_x(&mut self) -> u16 {
-        u16::from(self.fetch_byte().wrapping_add(self.cpu.x))
+        let base = self.fetch_byte();
+        self.traced_read(u16::from(base));
+        u16::from(base.wrapping_add(self.cpu.x))
     }
 
     fn addr_zero_page_y(&mut self) -> u16 {
-        u16::from(self.fetch_byte().wrapping_add(self.cpu.y))
+        let base = self.fetch_byte();
+        self.traced_read(u16::from(base));
+        u16::from(base.wrapping_add(self.cpu.y))
     }
 
     fn addr_absolute(&mut self) -> u16 {
