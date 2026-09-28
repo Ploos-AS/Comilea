@@ -663,7 +663,7 @@ impl Machine {
                 6
             }
             0x1e => {
-                let (a, _) = self.addr_absolute_x();
+                let a = self.addr_absolute_indexed_rmw();
                 let old = self.rmw_read(a);
                 let v = self.asl(old);
                 self.write(a, v);
@@ -691,7 +691,7 @@ impl Machine {
                 6
             }
             0x5e => {
-                let (a, _) = self.addr_absolute_x();
+                let a = self.addr_absolute_indexed_rmw();
                 let old = self.rmw_read(a);
                 let v = self.lsr(old);
                 self.write(a, v);
@@ -719,7 +719,7 @@ impl Machine {
                 6
             }
             0x3e => {
-                let (a, _) = self.addr_absolute_x();
+                let a = self.addr_absolute_indexed_rmw();
                 let old = self.rmw_read(a);
                 let v = self.rol(old);
                 self.write(a, v);
@@ -747,7 +747,7 @@ impl Machine {
                 6
             }
             0x7e => {
-                let (a, _) = self.addr_absolute_x();
+                let a = self.addr_absolute_indexed_rmw();
                 let old = self.rmw_read(a);
                 let v = self.ror(old);
                 self.write(a, v);
@@ -775,7 +775,7 @@ impl Machine {
                 6
             }
             0xfe => {
-                let (a, _) = self.addr_absolute_x();
+                let a = self.addr_absolute_indexed_rmw();
                 let v = self.rmw_read(a).wrapping_add(1);
                 self.write(a, v);
                 self.set_zn(v);
@@ -803,7 +803,7 @@ impl Machine {
                 6
             }
             0xde => {
-                let (a, _) = self.addr_absolute_x();
+                let a = self.addr_absolute_indexed_rmw();
                 let v = self.rmw_read(a).wrapping_sub(1);
                 self.write(a, v);
                 self.set_zn(v);
@@ -1091,6 +1091,10 @@ impl Machine {
         let dummy = (base & 0xff00) | (address & 0x00ff);
         self.traced_read(dummy);
         address
+    }
+
+    fn addr_absolute_indexed_rmw(&mut self) -> u16 {
+        self.addr_absolute_indexed_write(self.cpu.x)
     }
 
     fn addr_absolute_y(&mut self) -> (u16, bool) {
