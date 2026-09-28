@@ -1018,8 +1018,9 @@ impl Machine {
                 self.traced_read(0x0100 | u16::from(self.cpu.sp));
                 let lo = self.pop_traced();
                 let hi = self.pop_traced();
-                self.cpu.pc = u16::from_le_bytes([lo, hi]).wrapping_add(1);
+                self.cpu.pc = u16::from_le_bytes([lo, hi]);
                 self.traced_read(self.cpu.pc);
+                self.cpu.pc = self.cpu.pc.wrapping_add(1);
                 6
             }
             0x10 => self.branch(self.cpu.status & FLAG_NEGATIVE == 0),
