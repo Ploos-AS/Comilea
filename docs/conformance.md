@@ -34,3 +34,23 @@ Comilea does not vendor this GPL test source into the MIT core. The CI adapter f
 ## Bruce Clark decimal test
 
 The pinned upstream `6502_decimal_test.a65` is explicitly public domain and defaults to NMOS 6502 mode (`cputype = 0`). Its default configuration checks ADC/SBC accumulator and carry behavior across all byte values, including invalid BCD digits; N, V, and Z decimal flags are disabled in that configuration. The program starts at `$0200`, leaves `ERROR` at zero-page `$000B` as 0 on success and 1 on failure, and terminates with byte `$DB` as a deliberate stop marker. Comilea therefore treats an illegal opcode `$DB` at the terminal PC as the harness stop condition and inspects `$000B` for pass/fail.
+
+
+## M0.13 qualification result
+
+M0.13 qualifies the documented NMOS 6502 instruction-state core against the MIT-licensed `SingleStepTests/65x02` vectors pinned at commit `2f6980a2d95757486c7bee24355c360e40e2a224`.
+
+All **151 documented NMOS 6502 opcodes** pass **10,000 vectors per opcode**, for **1,510,000 passing single-step vectors**. The harness verifies final PC, stack pointer, A/X/Y registers, processor status and the final values of memory locations supplied by each vector.
+
+The same strict CI gate also passes:
+
+- Klaus Dormann's pinned 6502 functional test: success trap at `$3469` after 30,646,179 instructions.
+- Bruce Clark's NMOS decimal test: success stop at `$024B` after 14,464,188 instructions.
+
+SingleStep qualification exposed and fixed observable NMOS behavior including decimal ADC flag staging and JSR ordering when stack writes overlap the instruction stream.
+
+### Scope boundary
+
+This milestone does **not** yet claim cycle-by-cycle bus conformance. Although the upstream SingleStep vectors include a `cycles` bus trace, the M0.13 harness intentionally verifies architectural final state and relevant RAM only. Cycle-count and bus-sequence qualification are separate follow-up gates.
+
+M0.13 also does not by itself qualify C64 machine behavior. The 6510 I/O port at `$0000/$0001`, PLA/memory banking, VIC-II, SID, CIA devices, interrupts at machine timing boundaries and complete C64 system timing remain separate machine-level work.
