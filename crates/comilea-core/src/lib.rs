@@ -175,12 +175,14 @@ impl Machine {
         let opcode = self.fetch_byte();
         let used = match opcode {
             0x00 => {
+                self.traced_read(self.cpu.pc);
                 let p = self.cpu.pc.wrapping_add(1);
                 self.push((p >> 8) as u8);
                 self.push(p as u8);
                 self.push(self.cpu.status | FLAG_BREAK | FLAG_UNUSED);
                 self.cpu.status |= FLAG_INTERRUPT_DISABLE;
-                self.cpu.pc = u16::from_le_bytes([self.read(0xfffe), self.read(0xffff)]);
+                self.cpu.pc =
+                    u16::from_le_bytes([self.traced_read(0xfffe), self.traced_read(0xffff)]);
                 7
             }
             0x40 => {
