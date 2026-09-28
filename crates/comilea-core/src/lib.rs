@@ -810,6 +810,7 @@ impl Machine {
                 7
             }
             0x48 => {
+                self.implied_cycle();
                 self.push(self.cpu.a);
                 3
             }
@@ -820,6 +821,7 @@ impl Machine {
                 4
             }
             0x08 => {
+                self.implied_cycle();
                 self.push(self.cpu.status | FLAG_BREAK | FLAG_UNUSED);
                 3
             }
