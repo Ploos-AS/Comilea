@@ -74,6 +74,14 @@ impl Machine {
         self.cycles = 0;
     }
 
+    pub fn irq(&mut self) -> bool {
+        if self.cpu.status & FLAG_INTERRUPT_DISABLE != 0 { return false; }
+        self.interrupt(0xfffe);
+        true
+    }
+
+    pub fn nmi(&mut self) { self.interrupt(0xfffa); }
+
     pub fn step_cycles(&mut self, cycles: u64) {
         self.cycles = self.cycles.saturating_add(cycles);
     }
@@ -338,6 +346,15 @@ impl Machine {
         3 + u64::from((old & 0xff00) != (self.cpu.pc & 0xff00))
     }
 
+    fn interrupt(&mut self, vector: u16) {
+        self.push((self.cpu.pc >> 8) as u8);
+        self.push(self.cpu.pc as u8);
+        self.push((self.cpu.status | FLAG_UNUSED) & !FLAG_BREAK);
+        self.cpu.status |= FLAG_INTERRUPT_DISABLE;
+        self.cpu.pc = u16::from_le_bytes([self.read(vector), self.read(vector.wrapping_add(1))]);
+        self.cycles = self.cycles.saturating_add(7);
+    }
+
     fn adc(&mut self, value: u8) {
         let carry = u16::from(self.cpu.status & FLAG_CARRY != 0);
         let a = self.cpu.a;
@@ -346,12 +363,31 @@ impl Machine {
         self.cpu.status &= !(FLAG_CARRY | FLAG_OVERFLOW);
         if sum > 0xff { self.cpu.status |= FLAG_CARRY; }
         if (!(a ^ value) & (a ^ result) & 0x80) != 0 { self.cpu.status |= FLAG_OVERFLOW; }
-        self.cpu.a = result;
+        if self.cpu.status & FLAG_DECIMAL != 0 {
+            let mut lo = (a & 0x0f) + (value & 0x0f) + u8::from(carry != 0);
+            let mut hi = (a >> 4) + (value >> 4);
+            if lo > 9 { lo = lo.wrapping_add(6); hi = hi.wrapping_add(1); }
+            if hi > 9 { hi = hi.wrapping_add(6); self.cpu.status |= FLAG_CARRY; }
+            self.cpu.a = (hi << 4) | (lo & 0x0f);
+        } else { self.cpu.a = result; }
         self.set_zn(result);
     }
 
     fn sbc(&mut self, value: u8) {
-        self.adc(!value);
+        if self.cpu.status & FLAG_DECIMAL == 0 { self.adc(!value); return; }
+        let a = self.cpu.a;
+        let borrow = i16::from(self.cpu.status & FLAG_CARRY == 0);
+        let binary = i16::from(a) - i16::from(value) - borrow;
+        let result = binary as u8;
+        self.cpu.status &= !(FLAG_CARRY | FLAG_OVERFLOW);
+        if binary >= 0 { self.cpu.status |= FLAG_CARRY; }
+        if ((a ^ result) & (a ^ value) & 0x80) != 0 { self.cpu.status |= FLAG_OVERFLOW; }
+        let mut lo = i16::from(a & 0x0f) - i16::from(value & 0x0f) - borrow;
+        let mut hi = i16::from(a >> 4) - i16::from(value >> 4);
+        if lo < 0 { lo -= 6; hi -= 1; }
+        if hi < 0 { hi -= 6; }
+        self.cpu.a = (((hi as u8) << 4) & 0xf0) | ((lo as u8) & 0x0f);
+        self.set_zn(result);
     }
 
     fn and_a(&mut self, value: u8) { self.cpu.a &= value; self.set_zn(self.cpu.a); }
@@ -472,8 +508,8 @@ mod tests {
 
     #[test]
     fn jsr_and_rts_round_trip_through_stack() {
-        let mut m = machine_with(&[0x20, 0x06, 0x08, 0xea, 0xea, 0xea, 0x60]);
-        assert_eq!(m.step(), Ok(6)); assert_eq!(m.cpu().pc, 0x0806); assert_eq!(m.cpu().sp, 0xfb);
+        let mut m = machine_with(&[0x20, 0x07, 0x08, 0xea, 0xea, 0xea, 0x60]);
+        assert_eq!(m.step(), Ok(6)); assert_eq!(m.cpu().pc, 0x0807); assert_eq!(m.cpu().sp, 0xfb);
         assert_eq!(m.step(), Ok(6)); assert_eq!(m.cpu().pc, 0x0804); assert_eq!(m.cpu().sp, 0xfd);
     }
 
@@ -620,6 +656,24 @@ mod tests {
         m.write(0x0000, 0x55);
         assert_eq!(m.step(), Ok(4)); assert_eq!(m.cpu().y, 0x55);
         assert_eq!(m.step(), Ok(4)); assert_eq!(m.read(0x0023), 0x55);
+    }
+
+    #[test]
+    fn decimal_adc_and_sbc_handle_bcd() {
+        let mut m = machine_with(&[0xf8,0x18,0xa9,0x45,0x69,0x55,0x38,0xe9,0x01]);
+        for _ in 0..5 { m.step().unwrap(); }
+        assert_eq!(m.cpu().a, 0x00); assert_ne!(m.cpu().status & FLAG_CARRY, 0);
+        m.step().unwrap(); m.step().unwrap();
+        assert_eq!(m.cpu().a, 0x99);
+    }
+
+    #[test]
+    fn irq_and_nmi_use_vectors_and_stack() {
+        let mut m = machine_with(&[0x58,0xea]);
+        m.write(0xfffe,0x00); m.write(0xffff,0x20); m.write(0xfffa,0x00); m.write(0xfffb,0x30);
+        m.step().unwrap();
+        assert!(m.irq()); assert_eq!(m.cpu().pc,0x2000);
+        m.nmi(); assert_eq!(m.cpu().pc,0x3000);
     }
 
     #[test]
