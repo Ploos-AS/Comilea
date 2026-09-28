@@ -191,7 +191,7 @@ impl Machine {
                 6
             }
             0xea => {
-                self.traced_read(self.cpu.pc);
+                self.implied_cycle();
                 2
             } // NOP
             0xa9 => {
@@ -565,18 +565,22 @@ impl Machine {
                 4
             }
             0x0a => {
+                self.implied_cycle();
                 self.cpu.a = self.asl(self.cpu.a);
                 2
             }
             0x4a => {
+                self.implied_cycle();
                 self.cpu.a = self.lsr(self.cpu.a);
                 2
             }
             0x2a => {
+                self.implied_cycle();
                 self.cpu.a = self.rol(self.cpu.a);
                 2
             }
             0x6a => {
+                self.implied_cycle();
                 self.cpu.a = self.ror(self.cpu.a);
                 2
             }
@@ -751,30 +755,37 @@ impl Machine {
                 4
             }
             0x18 => {
+                self.implied_cycle();
                 self.cpu.status &= !FLAG_CARRY;
                 2
             }
             0x38 => {
+                self.implied_cycle();
                 self.cpu.status |= FLAG_CARRY;
                 2
             }
             0x58 => {
+                self.implied_cycle();
                 self.cpu.status &= !FLAG_INTERRUPT_DISABLE;
                 2
             }
             0x78 => {
+                self.implied_cycle();
                 self.cpu.status |= FLAG_INTERRUPT_DISABLE;
                 2
             }
             0xb8 => {
+                self.implied_cycle();
                 self.cpu.status &= !FLAG_OVERFLOW;
                 2
             }
             0xd8 => {
+                self.implied_cycle();
                 self.cpu.status &= !FLAG_DECIMAL;
                 2
             }
             0xf8 => {
+                self.implied_cycle();
                 self.cpu.status |= FLAG_DECIMAL;
                 2
             }
@@ -844,50 +855,60 @@ impl Machine {
                 4
             }
             0xaa => {
+                self.implied_cycle();
                 self.cpu.x = self.cpu.a;
                 self.set_zn(self.cpu.x);
                 2
             }
             0x8a => {
+                self.implied_cycle();
                 self.cpu.a = self.cpu.x;
                 self.set_zn(self.cpu.a);
                 2
             }
             0xa8 => {
+                self.implied_cycle();
                 self.cpu.y = self.cpu.a;
                 self.set_zn(self.cpu.y);
                 2
             }
             0x98 => {
+                self.implied_cycle();
                 self.cpu.a = self.cpu.y;
                 self.set_zn(self.cpu.a);
                 2
             }
             0xba => {
+                self.implied_cycle();
                 self.cpu.x = self.cpu.sp;
                 self.set_zn(self.cpu.x);
                 2
             }
             0x9a => {
+                self.implied_cycle();
                 self.cpu.sp = self.cpu.x;
                 2
             }
             0xe8 => {
+                self.implied_cycle();
                 self.cpu.x = self.cpu.x.wrapping_add(1);
                 self.set_zn(self.cpu.x);
                 2
             }
             0xca => {
+                self.implied_cycle();
                 self.cpu.x = self.cpu.x.wrapping_sub(1);
                 self.set_zn(self.cpu.x);
                 2
             }
             0xc8 => {
+                self.implied_cycle();
                 self.cpu.y = self.cpu.y.wrapping_add(1);
                 self.set_zn(self.cpu.y);
                 2
             }
             0x88 => {
+                self.implied_cycle();
                 self.cpu.y = self.cpu.y.wrapping_sub(1);
                 self.set_zn(self.cpu.y);
                 2
@@ -936,6 +957,10 @@ impl Machine {
         };
         self.cycles = self.cycles.saturating_add(used);
         Ok(used as u8)
+    }
+
+    fn implied_cycle(&mut self) {
+        self.traced_read(self.cpu.pc);
     }
 
     fn fetch_byte(&mut self) -> u8 {
