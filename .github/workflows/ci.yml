@@ -17,7 +17,13 @@ jobs:
         with:
           components: rustfmt, clippy
       - name: Format
-        run: cargo fmt --all --check
+        run: |
+          cargo fmt --all
+          echo COMILEA_FORMATTED_LIB_BEGIN
+          base64 -w 0 crates/comilea-core/src/lib.rs
+          echo
+          echo COMILEA_FORMATTED_LIB_END
+          git diff --exit-code
       - name: Clippy
         run: cargo clippy --workspace --all-targets -- -D warnings
       - name: Test
