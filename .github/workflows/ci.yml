@@ -51,5 +51,8 @@ jobs:
           /tmp/as65/as65 -l 6502_decimal_test.a65
           ls -l /tmp/6502_decimal_test.*
           file /tmp/6502_decimal_test.*
+          test "$(wc -c < /tmp/6502_decimal_test.bin)" -eq 234
+      - name: Bruce Clark NMOS decimal conformance
+        run: cargo run -p comilea-core --example decimal6502 -- /tmp/6502_decimal_test.bin
       - name: Headless smoke test
         run: cargo run -p comilea-cli -- --cycles 1000
