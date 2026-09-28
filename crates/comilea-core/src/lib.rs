@@ -65,6 +65,11 @@ impl Machine {
         &self.cpu
     }
 
+    /// Replaces the CPU register state. Intended for deterministic test and debugger setup.
+    pub fn set_cpu(&mut self, cpu: Cpu6510) {
+        self.cpu = cpu;
+    }
+
     #[must_use]
     pub const fn cycles(&self) -> u64 {
         self.cycles
