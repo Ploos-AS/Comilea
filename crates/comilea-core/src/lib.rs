@@ -1,5 +1,8 @@
 #![forbid(unsafe_code)]
 
+pub mod opcode;
+pub use opcode::{opcode_info, OpcodeClass, OpcodeInfo, OFFICIAL_OPCODE_COUNT};
+
 const FLAG_CARRY: u8 = 0x01;
 const FLAG_ZERO: u8 = 0x02;
 const FLAG_INTERRUPT_DISABLE: u8 = 0x04;
@@ -492,6 +495,18 @@ mod tests {
             let mut m = machine_with(&program);
             assert!(m.step().is_ok());
         }
+    }
+
+    #[test]
+    fn opcode_catalog_tracks_all_256_values() {
+        for opcode in 0u8..=u8::MAX { assert_eq!(super::opcode_info(opcode).opcode, opcode); }
+        assert_eq!(super::OFFICIAL_OPCODE_COUNT, 151);
+    }
+
+    #[test]
+    fn implemented_decode_is_marked_in_catalog() {
+        let implemented = [0xea,0xa9,0xa5,0xb5,0xad,0xbd,0xb9,0xa1,0xb1,0x69,0xe9,0x20,0x60,0x6c];
+        for opcode in implemented { assert!(super::opcode_info(opcode).implemented, "opcode {opcode:02x}"); }
     }
 
     #[test]
