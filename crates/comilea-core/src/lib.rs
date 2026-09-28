@@ -1014,8 +1014,7 @@ impl Machine {
                 self.cpu.status |= FLAG_ZERO;
             }
 
-            let mut low =
-                u16::from(a & 0x0f) + u16::from(value & 0x0f) + carry_in;
+            let mut low = u16::from(a & 0x0f) + u16::from(value & 0x0f) + carry_in;
             if low > 9 {
                 low += 6;
             }
