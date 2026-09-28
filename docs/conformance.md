@@ -30,3 +30,7 @@ Pinned revision: `7954e2dbb49c469ea286070bf46cdd71aeb29e4b`
 Source: `6502_functional_test.a65` (GPL-3.0-or-later, Klaus Dormann). The source documents an entry PC of `$0400`, requires writable memory for the default self-modifying configuration, and reports both failures and final success by looping at the current PC. The default configuration exercises documented NMOS 6502 opcodes only; decimal ADC/SBC uses valid BCD operands and does not qualify N/V/Z decimal flags.
 
 Comilea does not vendor this GPL test source into the MIT core. The CI adapter fetches the upstream prebuilt 64 KiB image from the pinned revision. Its Git blob SHA is `c9a35e1d6bd2e7d85844da2abf7034d5ed820e6e`; the corresponding pinned listing identifies `$3469` as the final success self-loop. CI verifies the downloaded image against the pinned Git object identity before execution and keeps third-party licensing/provenance explicit.
+
+## Bruce Clark decimal test
+
+The pinned upstream `6502_decimal_test.a65` is explicitly public domain and defaults to NMOS 6502 mode (`cputype = 0`). Its default configuration checks ADC/SBC accumulator and carry behavior across all byte values, including invalid BCD digits; N, V, and Z decimal flags are disabled in that configuration. The program starts at `$0200`, leaves `ERROR` at zero-page `$000B` as 0 on success and 1 on failure, and terminates with byte `$DB` as a deliberate stop marker. Comilea therefore treats an illegal opcode `$DB` at the terminal PC as the harness stop condition and inspects `$000B` for pass/fail.
