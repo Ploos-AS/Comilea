@@ -201,7 +201,8 @@ impl Machine {
             }
             0xa5 => {
                 let address = self.addr_zero_page();
-                self.load_a(self.traced_read(address));
+                let value = self.traced_read(address);
+                self.load_a(value);
                 3
             }
             0xb5 => {
@@ -241,7 +242,8 @@ impl Machine {
             }
             0xa6 => {
                 let a = self.addr_zero_page();
-                self.load_x(self.traced_read(a));
+                let value = self.traced_read(a);
+                self.load_x(value);
                 3
             }
             0xb6 => {
@@ -266,7 +268,8 @@ impl Machine {
             }
             0xa4 => {
                 let a = self.addr_zero_page();
-                self.load_y(self.traced_read(a));
+                let value = self.traced_read(a);
+                self.load_y(value);
                 3
             }
             0xb4 => {
