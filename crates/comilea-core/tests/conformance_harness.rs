@@ -17,6 +17,11 @@ pub enum TrapOutcome {
     },
 }
 
+/// Runs a full 64 KiB image until a stable PC trap or instruction budget is reached.
+///
+/// # Panics
+/// Panics unless `image` is exactly 64 KiB or `stable_pc_hits` is zero.
+#[must_use]
 pub fn run_self_trapping_image(
     image: &[u8],
     entry_pc: u16,
@@ -93,7 +98,7 @@ mod tests {
 
     #[test]
     fn reports_instruction_budget_exhaustion() {
-        let mut image = vec![0xeau8; 65_536];
+        let image = vec![0xeau8; 65_536];
         assert_eq!(
             run_self_trapping_image(&image, 0x0400, 4, 3),
             TrapOutcome::BudgetExceeded {
