@@ -400,37 +400,44 @@ impl Machine {
             }
             0x25 => {
                 let a = self.addr_zero_page();
-                self.and_a(self.read(a));
+                let value = self.traced_read(a);
+                self.and_a(value);
                 3
             }
             0x35 => {
                 let a = self.addr_zero_page_x();
-                self.and_a(self.read(a));
+                let value = self.traced_read(a);
+                self.and_a(value);
                 4
             }
             0x2d => {
                 let a = self.addr_absolute();
-                self.and_a(self.read(a));
+                let value = self.traced_read(a);
+                self.and_a(value);
                 4
             }
             0x3d => {
                 let (a, x) = self.addr_absolute_x();
-                self.and_a(self.read(a));
+                let value = self.traced_read(a);
+                self.and_a(value);
                 4 + u64::from(x)
             }
             0x39 => {
                 let (a, x) = self.addr_absolute_y();
-                self.and_a(self.read(a));
+                let value = self.traced_read(a);
+                self.and_a(value);
                 4 + u64::from(x)
             }
             0x21 => {
                 let a = self.addr_indexed_indirect();
-                self.and_a(self.read(a));
+                let value = self.traced_read(a);
+                self.and_a(value);
                 6
             }
             0x31 => {
                 let (a, x) = self.addr_indirect_indexed();
-                self.and_a(self.read(a));
+                let value = self.traced_read(a);
+                self.and_a(value);
                 5 + u64::from(x)
             }
             0x09 => {
@@ -440,37 +447,44 @@ impl Machine {
             }
             0x05 => {
                 let a = self.addr_zero_page();
-                self.ora_a(self.read(a));
+                let value = self.traced_read(a);
+                self.ora_a(value);
                 3
             }
             0x15 => {
                 let a = self.addr_zero_page_x();
-                self.ora_a(self.read(a));
+                let value = self.traced_read(a);
+                self.ora_a(value);
                 4
             }
             0x0d => {
                 let a = self.addr_absolute();
-                self.ora_a(self.read(a));
+                let value = self.traced_read(a);
+                self.ora_a(value);
                 4
             }
             0x1d => {
                 let (a, x) = self.addr_absolute_x();
-                self.ora_a(self.read(a));
+                let value = self.traced_read(a);
+                self.ora_a(value);
                 4 + u64::from(x)
             }
             0x19 => {
                 let (a, x) = self.addr_absolute_y();
-                self.ora_a(self.read(a));
+                let value = self.traced_read(a);
+                self.ora_a(value);
                 4 + u64::from(x)
             }
             0x01 => {
                 let a = self.addr_indexed_indirect();
-                self.ora_a(self.read(a));
+                let value = self.traced_read(a);
+                self.ora_a(value);
                 6
             }
             0x11 => {
                 let (a, x) = self.addr_indirect_indexed();
-                self.ora_a(self.read(a));
+                let value = self.traced_read(a);
+                self.ora_a(value);
                 5 + u64::from(x)
             }
             0x49 => {
@@ -480,37 +494,44 @@ impl Machine {
             }
             0x45 => {
                 let a = self.addr_zero_page();
-                self.eor_a(self.read(a));
+                let value = self.traced_read(a);
+                self.eor_a(value);
                 3
             }
             0x55 => {
                 let a = self.addr_zero_page_x();
-                self.eor_a(self.read(a));
+                let value = self.traced_read(a);
+                self.eor_a(value);
                 4
             }
             0x4d => {
                 let a = self.addr_absolute();
-                self.eor_a(self.read(a));
+                let value = self.traced_read(a);
+                self.eor_a(value);
                 4
             }
             0x5d => {
                 let (a, x) = self.addr_absolute_x();
-                self.eor_a(self.read(a));
+                let value = self.traced_read(a);
+                self.eor_a(value);
                 4 + u64::from(x)
             }
             0x59 => {
                 let (a, x) = self.addr_absolute_y();
-                self.eor_a(self.read(a));
+                let value = self.traced_read(a);
+                self.eor_a(value);
                 4 + u64::from(x)
             }
             0x41 => {
                 let a = self.addr_indexed_indirect();
-                self.eor_a(self.read(a));
+                let value = self.traced_read(a);
+                self.eor_a(value);
                 6
             }
             0x51 => {
                 let (a, x) = self.addr_indirect_indexed();
-                self.eor_a(self.read(a));
+                let value = self.traced_read(a);
+                self.eor_a(value);
                 5 + u64::from(x)
             }
             0xc9 => {
@@ -520,37 +541,44 @@ impl Machine {
             }
             0xc5 => {
                 let a = self.addr_zero_page();
-                self.cmp_a(self.read(a));
+                let value = self.traced_read(a);
+                self.cmp_a(value);
                 3
             }
             0xd5 => {
                 let a = self.addr_zero_page_x();
-                self.cmp_a(self.read(a));
+                let value = self.traced_read(a);
+                self.cmp_a(value);
                 4
             }
             0xcd => {
                 let a = self.addr_absolute();
-                self.cmp_a(self.read(a));
+                let value = self.traced_read(a);
+                self.cmp_a(value);
                 4
             }
             0xdd => {
                 let (a, x) = self.addr_absolute_x();
-                self.cmp_a(self.read(a));
+                let value = self.traced_read(a);
+                self.cmp_a(value);
                 4 + u64::from(x)
             }
             0xd9 => {
                 let (a, x) = self.addr_absolute_y();
-                self.cmp_a(self.read(a));
+                let value = self.traced_read(a);
+                self.cmp_a(value);
                 4 + u64::from(x)
             }
             0xc1 => {
                 let a = self.addr_indexed_indirect();
-                self.cmp_a(self.read(a));
+                let value = self.traced_read(a);
+                self.cmp_a(value);
                 6
             }
             0xd1 => {
                 let (a, x) = self.addr_indirect_indexed();
-                self.cmp_a(self.read(a));
+                let value = self.traced_read(a);
+                self.cmp_a(value);
                 5 + u64::from(x)
             }
             0xe0 => {
