@@ -854,11 +854,15 @@ impl Machine {
                 5
             }
             0x20 => {
-                let target = self.fetch_word();
-                let return_pc = self.cpu.pc.wrapping_sub(1);
+                // JSR fetches the low target byte before its stack writes, then
+                // fetches the high target byte afterwards. This ordering is
+                // observable when the stack overlaps the instruction stream.
+                let target_lo = self.fetch_byte();
+                let return_pc = self.cpu.pc;
                 self.push((return_pc >> 8) as u8);
                 self.push(return_pc as u8);
-                self.cpu.pc = target;
+                let target_hi = self.fetch_byte();
+                self.cpu.pc = u16::from_le_bytes([target_lo, target_hi]);
                 6
             }
             0x60 => {
