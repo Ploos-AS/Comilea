@@ -8,7 +8,7 @@ struct Case {
     initial: State,
     #[serde(rename = "final")]
     final_state: State,
-    cycles: Vec<serde_json::Value>,
+    cycles: Vec<(u16, u8, String)>,
 }
 
 #[derive(Deserialize)]
@@ -50,9 +50,33 @@ fn main() {
             status: case.initial.p,
         });
         let cycles_before = machine.cycles();
+        let check_bus = env::args().any(|arg| arg == "--bus");
+        if check_bus {
+            machine.begin_bus_trace();
+        }
         if let Err(error) = machine.step() {
             eprintln!("single-step FAIL {} #{}: {error:?}", case.name, index + 1);
             process::exit(1);
+        }
+
+        if check_bus {
+            machine.end_bus_trace();
+            let trace = machine.bus_trace();
+            let bus_matches = trace.len() == case.cycles.len()
+                && trace.iter().zip(&case.cycles).all(|(actual, expected)| {
+                    actual.address == expected.0
+                        && actual.value == expected.1
+                        && actual.write == (expected.2 == "write")
+                });
+            if !bus_matches {
+                eprintln!(
+                    "single-step BUS FAIL {} #{}: actual={trace:?}, expected={:?}",
+                    case.name,
+                    index + 1,
+                    case.cycles
+                );
+                process::exit(1);
+            }
         }
 
         let used_cycles = machine.cycles() - cycles_before;
