@@ -862,12 +862,12 @@ impl Machine {
                 4
             }
             0x9d => {
-                let (address, _) = self.addr_absolute_x();
+                let address = self.addr_absolute_indexed_write(self.cpu.x);
                 self.write(address, self.cpu.a);
                 5
             }
             0x99 => {
-                let (address, _) = self.addr_absolute_y();
+                let address = self.addr_absolute_indexed_write(self.cpu.y);
                 self.write(address, self.cpu.a);
                 5
             }
@@ -877,7 +877,7 @@ impl Machine {
                 6
             }
             0x91 => {
-                let (address, _) = self.addr_indirect_indexed();
+                let address = self.addr_indirect_indexed_write();
                 self.write(address, self.cpu.a);
                 6
             }
@@ -1063,6 +1063,14 @@ impl Machine {
         (address, crossed)
     }
 
+    fn addr_absolute_indexed_write(&mut self, index: u8) -> u16 {
+        let base = self.fetch_word();
+        let address = base.wrapping_add(u16::from(index));
+        let dummy = (base & 0xff00) | (address & 0x00ff);
+        self.traced_read(dummy);
+        address
+    }
+
     fn addr_absolute_y(&mut self) -> (u16, bool) {
         let base = self.fetch_word();
         let address = base.wrapping_add(u16::from(self.cpu.y));
@@ -1097,6 +1105,15 @@ impl Machine {
             self.traced_read(dummy);
         }
         (address, crossed)
+    }
+
+    fn addr_indirect_indexed_write(&mut self) -> u16 {
+        let pointer = self.fetch_byte();
+        let base = self.read_zero_page_word(pointer);
+        let address = base.wrapping_add(u16::from(self.cpu.y));
+        let dummy = (base & 0xff00) | (address & 0x00ff);
+        self.traced_read(dummy);
+        address
     }
 
     fn addr_jmp_indirect(&mut self) -> u16 {
