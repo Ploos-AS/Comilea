@@ -19,6 +19,13 @@ const FLAG_OVERFLOW: u8 = 0x40;
 const FLAG_NEGATIVE: u8 = 0x80;
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Default)]
+pub struct BusAccess {
+    pub address: u16,
+    pub value: u8,
+    pub write: bool,
+}
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Default)]
 pub struct Cpu6510 {
     pub a: u8,
     pub x: u8,
@@ -38,6 +45,8 @@ pub struct Machine {
     cpu: Cpu6510,
     memory: Box<[u8]>,
     cycles: u64,
+    bus_trace: Vec<BusAccess>,
+    tracing: bool,
 }
 
 impl Default for Machine {
@@ -57,6 +66,8 @@ impl Machine {
             },
             memory: vec![0; 65_536].into_boxed_slice(),
             cycles: 0,
+            bus_trace: Vec::new(),
+            tracing: false,
         }
     }
 
@@ -81,7 +92,32 @@ impl Machine {
     }
 
     pub fn write(&mut self, address: u16, value: u8) {
+        if self.tracing {
+            self.bus_trace.push(BusAccess { address, value, write: true });
+        }
         self.memory[usize::from(address)] = value;
+    }
+
+    #[must_use]
+    pub fn bus_trace(&self) -> &[BusAccess] {
+        &self.bus_trace
+    }
+
+    pub fn begin_bus_trace(&mut self) {
+        self.bus_trace.clear();
+        self.tracing = true;
+    }
+
+    pub fn end_bus_trace(&mut self) {
+        self.tracing = false;
+    }
+
+    fn traced_read(&mut self, address: u16) -> u8 {
+        let value = self.read(address);
+        if self.tracing {
+            self.bus_trace.push(BusAccess { address, value, write: false });
+        }
+        value
     }
 
     /// Loads bytes starting at `address`, wrapping across the 16-bit address space.
@@ -146,7 +182,10 @@ impl Machine {
                 self.cpu.pc = u16::from_le_bytes([lo, hi]);
                 6
             }
-            0xea => 2, // NOP
+            0xea => {
+                self.traced_read(self.cpu.pc);
+                2
+            } // NOP
             0xa9 => {
                 let value = self.fetch_byte();
                 self.load_a(value);
@@ -892,7 +931,7 @@ impl Machine {
     }
 
     fn fetch_byte(&mut self) -> u8 {
-        let value = self.read(self.cpu.pc);
+        let value = self.traced_read(self.cpu.pc);
         self.cpu.pc = self.cpu.pc.wrapping_add(1);
         value
     }
