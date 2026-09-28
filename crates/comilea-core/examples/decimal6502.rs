@@ -31,19 +31,28 @@ fn main() {
             Err(StepError::IllegalOpcode { opcode, pc }) if opcode == STOP_OPCODE => {
                 let error = machine.read(ERROR_ADDRESS);
                 if error == 0 {
-                    println!("Bruce Clark decimal PASS at ${pc:04x} after {instructions} instructions");
+                    println!(
+                        "Bruce Clark decimal PASS at ${pc:04x} after {instructions} instructions"
+                    );
                     return;
                 }
-                eprintln!("Bruce Clark decimal FAIL: ERROR=${error:02x} at ${pc:04x} after {instructions} instructions");
+                eprintln!(
+                    "Bruce Clark decimal FAIL: ERROR=${error:02x} at ${pc:04x} after {instructions} instructions"
+                );
                 process::exit(1);
             }
             Err(StepError::IllegalOpcode { opcode, pc }) => {
-                eprintln!("decimal test unexpected illegal opcode ${opcode:02x} at ${pc:04x} after {instructions} instructions");
+                eprintln!(
+                    "decimal test unexpected illegal opcode ${opcode:02x} at ${pc:04x} after {instructions} instructions"
+                );
                 process::exit(1);
             }
         }
     }
 
-    eprintln!("decimal test instruction budget exceeded at ${:04x}", machine.cpu().pc);
+    eprintln!(
+        "decimal test instruction budget exceeded at ${:04x}",
+        machine.cpu().pc
+    );
     process::exit(1);
 }
