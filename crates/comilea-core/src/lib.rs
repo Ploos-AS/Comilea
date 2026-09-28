@@ -1063,7 +1063,12 @@ impl Machine {
         let pointer = self.fetch_byte();
         let base = self.read_zero_page_word(pointer);
         let address = base.wrapping_add(u16::from(self.cpu.y));
-        (address, (base & 0xff00) != (address & 0xff00))
+        let crossed = (base & 0xff00) != (address & 0xff00);
+        if crossed {
+            let dummy = (base & 0xff00) | (address & 0x00ff);
+            self.traced_read(dummy);
+        }
+        (address, crossed)
     }
 
     fn addr_jmp_indirect(&mut self) -> u16 {
