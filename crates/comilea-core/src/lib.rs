@@ -1,6 +1,8 @@
 #![forbid(unsafe_code)]
 
+const FLAG_CARRY: u8 = 0x01;
 const FLAG_ZERO: u8 = 0x02;
+const FLAG_OVERFLOW: u8 = 0x40;
 const FLAG_NEGATIVE: u8 = 0x80;
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Default)]
@@ -77,8 +79,14 @@ impl Machine {
             0xa9 => { let value = self.fetch_byte(); self.cpu.a = value; self.set_zn(value); 2 }
             0xa2 => { let value = self.fetch_byte(); self.cpu.x = value; self.set_zn(value); 2 }
             0xa0 => { let value = self.fetch_byte(); self.cpu.y = value; self.set_zn(value); 2 }
+            0x69 => { let value = self.fetch_byte(); self.adc(value); 2 }
+            0xe9 => { let value = self.fetch_byte(); self.sbc(value); 2 }
             0x8d => { let address = self.fetch_word(); self.write(address, self.cpu.a); 4 }
             0x4c => { self.cpu.pc = self.fetch_word(); 3 }
+            0x20 => { let target = self.fetch_word(); let return_pc = self.cpu.pc.wrapping_sub(1); self.push((return_pc >> 8) as u8); self.push(return_pc as u8); self.cpu.pc = target; 6 }
+            0x60 => { let lo = self.pop(); let hi = self.pop(); self.cpu.pc = u16::from_le_bytes([lo, hi]).wrapping_add(1); 6 }
+            0xd0 => self.branch(self.cpu.status & FLAG_ZERO == 0),
+            0xf0 => self.branch(self.cpu.status & FLAG_ZERO != 0),
             _ => {
                 self.cpu.pc = instruction_pc;
                 return Err(StepError::IllegalOpcode { opcode, pc: instruction_pc });
@@ -98,6 +106,40 @@ impl Machine {
         let lo = self.fetch_byte();
         let hi = self.fetch_byte();
         u16::from_le_bytes([lo, hi])
+    }
+
+    fn push(&mut self, value: u8) {
+        self.write(0x0100 | u16::from(self.cpu.sp), value);
+        self.cpu.sp = self.cpu.sp.wrapping_sub(1);
+    }
+
+    fn pop(&mut self) -> u8 {
+        self.cpu.sp = self.cpu.sp.wrapping_add(1);
+        self.read(0x0100 | u16::from(self.cpu.sp))
+    }
+
+    fn branch(&mut self, condition: bool) -> u64 {
+        let offset = self.fetch_byte() as i8;
+        if !condition { return 2; }
+        let old = self.cpu.pc;
+        self.cpu.pc = self.cpu.pc.wrapping_add_signed(i16::from(offset));
+        3 + u64::from((old & 0xff00) != (self.cpu.pc & 0xff00))
+    }
+
+    fn adc(&mut self, value: u8) {
+        let carry = u16::from(self.cpu.status & FLAG_CARRY != 0);
+        let a = self.cpu.a;
+        let sum = u16::from(a) + u16::from(value) + carry;
+        let result = sum as u8;
+        self.cpu.status &= !(FLAG_CARRY | FLAG_OVERFLOW);
+        if sum > 0xff { self.cpu.status |= FLAG_CARRY; }
+        if (!(a ^ value) & (a ^ result) & 0x80) != 0 { self.cpu.status |= FLAG_OVERFLOW; }
+        self.cpu.a = result;
+        self.set_zn(result);
+    }
+
+    fn sbc(&mut self, value: u8) {
+        self.adc(!value);
     }
 
     fn set_zn(&mut self, value: u8) {
@@ -169,6 +211,30 @@ mod tests {
         assert_eq!(m.step(), Err(StepError::IllegalOpcode { opcode: 0x02, pc: 0x0801 }));
         assert_eq!(m.cpu().pc, 0x0801);
         assert_eq!(m.cycles(), 0);
+    }
+
+    #[test]
+    fn jsr_and_rts_round_trip_through_stack() {
+        let mut m = machine_with(&[0x20, 0x06, 0x08, 0xea, 0xea, 0xea, 0x60]);
+        assert_eq!(m.step(), Ok(6)); assert_eq!(m.cpu().pc, 0x0806); assert_eq!(m.cpu().sp, 0xfb);
+        assert_eq!(m.step(), Ok(6)); assert_eq!(m.cpu().pc, 0x0804); assert_eq!(m.cpu().sp, 0xfd);
+    }
+
+    #[test]
+    fn branches_apply_signed_offset_and_cycles() {
+        let mut m = machine_with(&[0xa9, 0x00, 0xf0, 0x02, 0xea, 0xea, 0xea]);
+        m.step().unwrap();
+        assert_eq!(m.step(), Ok(3));
+        assert_eq!(m.cpu().pc, 0x0807);
+    }
+
+    #[test]
+    fn adc_and_sbc_update_accumulator_and_flags() {
+        let mut m = machine_with(&[0xa9, 0x7f, 0x69, 0x01, 0xe9, 0x01]);
+        m.step().unwrap(); m.step().unwrap();
+        assert_eq!(m.cpu().a, 0x80); assert_ne!(m.cpu().status & FLAG_OVERFLOW, 0);
+        m.step().unwrap();
+        assert_eq!(m.cpu().a, 0x7e);
     }
 
     #[test]
