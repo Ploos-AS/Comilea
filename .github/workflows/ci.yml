@@ -42,5 +42,8 @@ jobs:
           unzip -l /tmp/as65_142.zip
           unzip -q /tmp/as65_142.zip -d /tmp/as65
           find /tmp/as65 -maxdepth 3 -type f -print
+          chmod +x /tmp/as65/as65
+          /tmp/as65/as65 -h || true
+          sed -n '1,160p' /tmp/as65/readme.txt
       - name: Headless smoke test
         run: cargo run -p comilea-cli -- --cycles 1000
