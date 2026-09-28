@@ -1,4 +1,6 @@
 #![forbid(unsafe_code)]
+#![allow(clippy::too_many_lines)]
+#![allow(clippy::cast_possible_truncation, clippy::cast_possible_wrap, clippy::cast_sign_loss)]
 
 pub mod opcode;
 pub use opcode::{opcode_info, OpcodeClass, OpcodeInfo, OFFICIAL_OPCODE_COUNT};
@@ -43,7 +45,7 @@ impl Machine {
     pub fn new() -> Self {
         Self {
             cpu: Cpu6510 { sp: 0xfd, status: 0x24, ..Cpu6510::default() },
-            memory: Box::new([0; 65_536]),
+            memory: vec![0; 65_536].into_boxed_slice().try_into().expect("64 KiB memory has exact size"),
             cycles: 0,
         }
     }
@@ -61,6 +63,10 @@ impl Machine {
         self.memory[usize::from(address)] = value;
     }
 
+    /// Loads bytes starting at `address`, wrapping across the 16-bit address space.
+    ///
+    /// # Panics
+    /// Panics when `bytes` contains more than 65,536 bytes.
     pub fn load(&mut self, address: u16, bytes: &[u8]) {
         for (offset, byte) in bytes.iter().copied().enumerate() {
             let offset = u16::try_from(offset).expect("program is too large for 16-bit address space");
@@ -86,6 +92,10 @@ impl Machine {
         self.cycles = self.cycles.saturating_add(cycles);
     }
 
+    /// Executes one 6510 instruction and returns the cycles consumed.
+    ///
+    /// # Errors
+    /// Returns [`StepError::IllegalOpcode`] when the fetched opcode has no implemented decode path.
     pub fn step(&mut self) -> Result<u8, StepError> {
         let instruction_pc = self.cpu.pc;
         let opcode = self.fetch_byte();
@@ -444,7 +454,10 @@ impl Machine {
 
 #[cfg(test)]
 mod tests {
-    use super::{Machine, StepError};
+    use super::{
+        Machine, StepError, FLAG_BREAK, FLAG_CARRY, FLAG_DECIMAL, FLAG_INTERRUPT_DISABLE,
+        FLAG_NEGATIVE, FLAG_OVERFLOW, FLAG_UNUSED,
+    };
 
     fn machine_with(program: &[u8]) -> Machine {
         let mut m = Machine::new();
