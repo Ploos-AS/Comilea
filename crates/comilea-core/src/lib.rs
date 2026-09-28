@@ -999,33 +999,55 @@ impl Machine {
     }
 
     fn adc(&mut self, value: u8) {
-        let carry = u16::from(self.cpu.status & FLAG_CARRY != 0);
+        let carry_in = u16::from(self.cpu.status & FLAG_CARRY != 0);
         let a = self.cpu.a;
-        let sum = u16::from(a) + u16::from(value) + carry;
-        let result = sum as u8;
-        self.cpu.status &= !(FLAG_CARRY | FLAG_OVERFLOW);
-        if sum > 0xff {
-            self.cpu.status |= FLAG_CARRY;
-        }
-        if (!(a ^ value) & (a ^ result) & 0x80) != 0 {
-            self.cpu.status |= FLAG_OVERFLOW;
-        }
+        let binary_sum = u16::from(a) + u16::from(value) + carry_in;
+        let binary_result = binary_sum as u8;
+
+        self.cpu.status &= !(FLAG_CARRY | FLAG_OVERFLOW | FLAG_NEGATIVE | FLAG_ZERO);
+
         if self.cpu.status & FLAG_DECIMAL != 0 {
-            let mut lo = (a & 0x0f) + (value & 0x0f) + u8::from(carry != 0);
-            let mut hi = (a >> 4) + (value >> 4);
-            if lo > 9 {
-                lo = lo.wrapping_add(6);
-                hi = hi.wrapping_add(1);
+            // NMOS 6502 decimal ADC exposes flags from different internal stages:
+            // Z from the unadjusted binary sum, N/V after low-digit correction
+            // but before the final high-digit correction, and C after that correction.
+            if binary_result == 0 {
+                self.cpu.status |= FLAG_ZERO;
             }
-            if hi > 9 {
-                hi = hi.wrapping_add(6);
+
+            let mut low =
+                u16::from(a & 0x0f) + u16::from(value & 0x0f) + carry_in;
+            if low > 9 {
+                low += 6;
+            }
+            let carry_to_high = u16::from(low > 0x0f);
+            let mut intermediate =
+                u16::from(a & 0xf0) + u16::from(value & 0xf0) + (carry_to_high << 4);
+            intermediate += low & 0x0f;
+
+            if intermediate & 0x80 != 0 {
+                self.cpu.status |= FLAG_NEGATIVE;
+            }
+            if (!(a ^ value) & (a ^ intermediate as u8) & 0x80) != 0 {
+                self.cpu.status |= FLAG_OVERFLOW;
+            }
+
+            if intermediate > 0x9f {
+                intermediate += 0x60;
+            }
+            if intermediate > 0xff {
                 self.cpu.status |= FLAG_CARRY;
             }
-            self.cpu.a = (hi << 4) | (lo & 0x0f);
+            self.cpu.a = intermediate as u8;
         } else {
-            self.cpu.a = result;
+            if binary_sum > 0xff {
+                self.cpu.status |= FLAG_CARRY;
+            }
+            if (!(a ^ value) & (a ^ binary_result) & 0x80) != 0 {
+                self.cpu.status |= FLAG_OVERFLOW;
+            }
+            self.cpu.a = binary_result;
+            self.set_zn(binary_result);
         }
-        self.set_zn(result);
     }
 
     fn sbc(&mut self, value: u8) {
