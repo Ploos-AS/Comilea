@@ -1155,10 +1155,10 @@ impl Machine {
 
     fn addr_jmp_indirect(&mut self) -> u16 {
         let pointer = self.fetch_word();
-        let lo = self.read(pointer);
+        let lo = self.traced_read(pointer);
         // NMOS 6502/6510 wraps the high-byte fetch within the same page.
         let hi_address = (pointer & 0xff00) | u16::from((pointer as u8).wrapping_add(1));
-        let hi = self.read(hi_address);
+        let hi = self.traced_read(hi_address);
         u16::from_le_bytes([lo, hi])
     }
 
