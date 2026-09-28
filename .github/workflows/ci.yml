@@ -152,10 +152,40 @@ jobs:
           95 ad8594fc536ce20cdf684a757dc52c2acbd443e7
           96 95de823a99a0caea460de67bc72d6240e8382e03
           98 d1c7373b5784a89e7a1fc4eb740ab14ba933717b
+          99 c388ddfee931b95bd05eb7e39356f955c4ab8fd0
+          9a 11c6f0966605edcc0658750e637f2abf298cc19c
+          9d ffe1557cbaa1149ada676722d10bfd6aba4097da
+          a0 8d44d56ce6633658a8f3ef30e2987ddcc38e3e7c
+          a1 907a0d85506351a22f34c3e1b649618ce26aef6c
+          a2 a11a2ed1af2385bf33f04b6d2ccb88d08481fb6b
+          a4 8abec3aee55383fbd331f7328dc7eaa56fc76e9d
+          a5 8d6a7466853545e57ab252afbbc4f747e8e4b495
+          a6 42bca27487e92644ee90b5390cad22f431f9787b
+          a8 f1244e670a6bf927195c47f747f7f798664e6adb
+          aa ac41ec4650eadb2c91fde11b4b5668a7c28b8625
+          ac 3b843b1f9fc8607283deb924fca23080d21ff109
+          ad f769b6388d52e0a28f23726ffa651107c7141ce7
+          ae c9a4fdff20223df830c6026f31caf7f364f44325
+          b0 9bf956c2a5c89a47efb82b9d5e5c264884240179
+          b4 b540234bfc6157d1fd9f67fe7b49bd7caf1fce13
+          b5 14681f2be1f0cf439bfef195adc0deafc2db67d2
+          b6 8c842c62bc2428c5042b127aa2c0ffe1737ea11e
+          b8 6701774fa91c21b3f8b535c76775898d9140a36b
+          b9 1f78a77bf4be6ee7699ccbb9c59b1ff18b042904
+          ba a3db485d316573d40710114938d8233562f3408f
+          bc 5180eac338b0b13d30072491a8285656049b6bb0
+          bd fae8b71f04de776285495b7942a6ca81ecea83b3
+          be 7f7038a62efbec79d77b885a2226583c9cf8c452
+          c0 71012c422659f8fe04ea19548b3b85a86a4b5450
+          c1 5c6e7335d4222c833eab3dd9aa91f200e6ae1e23
+          c4 c70170f7be78de51c527b1f698d6435aec155da5
+          c5 3e94b722cb31123090d705a23b26c5470532e88b
+          c6 eb43446c3876c26a6d4860631bfba39b17cf8e32
+          c8 06f2b9f841d7b3403f756a69762de28bc183cc77
           EOF
       - name: SingleStep representative conformance
         run: |
-          for opcode in a9 69 e9 d0 48 68 06 b1 00 40 01 05 08 09 0a 0d 0e 10 11 15 16 18 19 1d 1e 20 21 24 25 26 28 29 2a 2c 2d 2e 30 31 35 36 38 39 3d 3e 41 45 46 49 4a 4c 4d 4e 50 51 55 56 58 59 5d 5e 60 61 65 66 6a 6c 6d 6e 70 71 75 76 78 79 7d 7e 81 84 85 86 88 8a 8c 8d 8e 90 91 94 95 96 98; do
+          for opcode in a9 69 e9 d0 48 68 06 b1 00 40 01 05 08 09 0a 0d 0e 10 11 15 16 18 19 1d 1e 20 21 24 25 26 28 29 2a 2c 2d 2e 30 31 35 36 38 39 3d 3e 41 45 46 49 4a 4c 4d 4e 50 51 55 56 58 59 5d 5e 60 61 65 66 6a 6c 6d 6e 70 71 75 76 78 79 7d 7e 81 84 85 86 88 8a 8c 8d 8e 90 91 94 95 96 98 99 9a 9d a0 a1 a2 a4 a5 a6 a8 aa ac ad ae b0 b4 b5 b6 b8 b9 ba bc bd be c0 c1 c4 c5 c6 c8; do
             echo "== opcode $opcode =="
             cargo run -p comilea-core --example singlestep6502 -- "/tmp/$opcode.json"
           done
