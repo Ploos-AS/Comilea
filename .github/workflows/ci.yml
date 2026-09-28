@@ -24,5 +24,14 @@ jobs:
         run: cargo test --workspace --all-targets
       - name: Build
         run: cargo build --workspace --all-targets
+      - name: Fetch pinned Klaus 6502 functional image
+        run: |
+          curl --fail --location --retry 3 \
+            -o /tmp/6502_functional_test.bin \
+            https://raw.githubusercontent.com/Klaus2m5/6502_65C02_functional_tests/7954e2dbb49c469ea286070bf46cdd71aeb29e4b/bin_files/6502_functional_test.bin
+          test "$(wc -c < /tmp/6502_functional_test.bin)" -eq 65536
+          test "$(git hash-object /tmp/6502_functional_test.bin)" = c9a35e1d6bd2e7d85844da2abf7034d5ed820e6e
+      - name: Klaus 6502 functional conformance
+        run: cargo run -p comilea-core --example klaus6502 -- /tmp/6502_functional_test.bin
       - name: Headless smoke test
         run: cargo run -p comilea-cli -- --cycles 1000
