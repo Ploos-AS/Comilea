@@ -643,97 +643,113 @@ impl Machine {
             }
             0x06 => {
                 let a = self.addr_zero_page();
-                let v = self.asl(self.rmw_read(a));
+                let old = self.rmw_read(a);
+                let v = self.asl(old);
                 self.write(a, v);
                 5
             }
             0x16 => {
                 let a = self.addr_zero_page_x();
-                let v = self.asl(self.rmw_read(a));
+                let old = self.rmw_read(a);
+                let v = self.asl(old);
                 self.write(a, v);
                 6
             }
             0x0e => {
                 let a = self.addr_absolute();
-                let v = self.asl(self.rmw_read(a));
+                let old = self.rmw_read(a);
+                let v = self.asl(old);
                 self.write(a, v);
                 6
             }
             0x1e => {
                 let (a, _) = self.addr_absolute_x();
-                let v = self.asl(self.rmw_read(a));
+                let old = self.rmw_read(a);
+                let v = self.asl(old);
                 self.write(a, v);
                 7
             }
             0x46 => {
                 let a = self.addr_zero_page();
-                let v = self.lsr(self.rmw_read(a));
+                let old = self.rmw_read(a);
+                let v = self.lsr(old);
                 self.write(a, v);
                 5
             }
             0x56 => {
                 let a = self.addr_zero_page_x();
-                let v = self.lsr(self.rmw_read(a));
+                let old = self.rmw_read(a);
+                let v = self.lsr(old);
                 self.write(a, v);
                 6
             }
             0x4e => {
                 let a = self.addr_absolute();
-                let v = self.lsr(self.rmw_read(a));
+                let old = self.rmw_read(a);
+                let v = self.lsr(old);
                 self.write(a, v);
                 6
             }
             0x5e => {
                 let (a, _) = self.addr_absolute_x();
-                let v = self.lsr(self.rmw_read(a));
+                let old = self.rmw_read(a);
+                let v = self.lsr(old);
                 self.write(a, v);
                 7
             }
             0x26 => {
                 let a = self.addr_zero_page();
-                let v = self.rol(self.rmw_read(a));
+                let old = self.rmw_read(a);
+                let v = self.rol(old);
                 self.write(a, v);
                 5
             }
             0x36 => {
                 let a = self.addr_zero_page_x();
-                let v = self.rol(self.rmw_read(a));
+                let old = self.rmw_read(a);
+                let v = self.rol(old);
                 self.write(a, v);
                 6
             }
             0x2e => {
                 let a = self.addr_absolute();
-                let v = self.rol(self.rmw_read(a));
+                let old = self.rmw_read(a);
+                let v = self.rol(old);
                 self.write(a, v);
                 6
             }
             0x3e => {
                 let (a, _) = self.addr_absolute_x();
-                let v = self.rol(self.rmw_read(a));
+                let old = self.rmw_read(a);
+                let v = self.rol(old);
                 self.write(a, v);
                 7
             }
             0x66 => {
                 let a = self.addr_zero_page();
-                let v = self.ror(self.rmw_read(a));
+                let old = self.rmw_read(a);
+                let v = self.ror(old);
                 self.write(a, v);
                 5
             }
             0x76 => {
                 let a = self.addr_zero_page_x();
-                let v = self.ror(self.rmw_read(a));
+                let old = self.rmw_read(a);
+                let v = self.ror(old);
                 self.write(a, v);
                 6
             }
             0x6e => {
                 let a = self.addr_absolute();
-                let v = self.ror(self.rmw_read(a));
+                let old = self.rmw_read(a);
+                let v = self.ror(old);
                 self.write(a, v);
                 6
             }
             0x7e => {
                 let (a, _) = self.addr_absolute_x();
-                let v = self.ror(self.rmw_read(a));
+                let old = self.rmw_read(a);
+                let v = self.ror(old);
                 self.write(a, v);
                 7
             }
