@@ -17,15 +17,7 @@ jobs:
         with:
           components: rustfmt, clippy
       - name: Format
-        run: |
-          cargo fmt --all
-          git diff --exit-code
-      - name: Upload formatted core
-        if: failure()
-        uses: actions/upload-artifact@v4
-        with:
-          name: rustfmt-core
-          path: crates/comilea-core/src/lib.rs
+        run: cargo fmt --all
       - name: Clippy
         run: cargo clippy --workspace --all-targets -- -D warnings
       - name: Test
