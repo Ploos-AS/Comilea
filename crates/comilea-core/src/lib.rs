@@ -815,7 +815,9 @@ impl Machine {
                 3
             }
             0x68 => {
-                let v = self.pop();
+                self.implied_cycle();
+                self.traced_read(0x0100 | u16::from(self.cpu.sp));
+                let v = self.pop_traced();
                 self.cpu.a = v;
                 self.set_zn(v);
                 4
@@ -826,7 +828,9 @@ impl Machine {
                 3
             }
             0x28 => {
-                self.cpu.status = (self.pop() | FLAG_UNUSED) & !FLAG_BREAK;
+                self.implied_cycle();
+                self.traced_read(0x0100 | u16::from(self.cpu.sp));
+                self.cpu.status = (self.pop_traced() | FLAG_UNUSED) & !FLAG_BREAK;
                 4
             }
             0x18 => {
@@ -1176,6 +1180,11 @@ impl Machine {
     fn pop(&mut self) -> u8 {
         self.cpu.sp = self.cpu.sp.wrapping_add(1);
         self.read(0x0100 | u16::from(self.cpu.sp))
+    }
+
+    fn pop_traced(&mut self) -> u8 {
+        self.cpu.sp = self.cpu.sp.wrapping_add(1);
+        self.traced_read(0x0100 | u16::from(self.cpu.sp))
     }
 
     fn branch(&mut self, condition: bool) -> u64 {
