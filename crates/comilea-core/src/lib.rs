@@ -291,37 +291,44 @@ impl Machine {
             }
             0x65 => {
                 let a = self.addr_zero_page();
-                self.adc(self.traced_read(a));
+                let value = self.traced_read(a);
+                self.adc(value);
                 3
             }
             0x75 => {
                 let a = self.addr_zero_page_x();
-                self.adc(self.traced_read(a));
+                let value = self.traced_read(a);
+                self.adc(value);
                 4
             }
             0x6d => {
                 let a = self.addr_absolute();
-                self.adc(self.traced_read(a));
+                let value = self.traced_read(a);
+                self.adc(value);
                 4
             }
             0x7d => {
                 let (a, x) = self.addr_absolute_x();
-                self.adc(self.traced_read(a));
+                let value = self.traced_read(a);
+                self.adc(value);
                 4 + u64::from(x)
             }
             0x79 => {
                 let (a, x) = self.addr_absolute_y();
-                self.adc(self.traced_read(a));
+                let value = self.traced_read(a);
+                self.adc(value);
                 4 + u64::from(x)
             }
             0x61 => {
                 let a = self.addr_indexed_indirect();
-                self.adc(self.traced_read(a));
+                let value = self.traced_read(a);
+                self.adc(value);
                 6
             }
             0x71 => {
                 let (a, x) = self.addr_indirect_indexed();
-                self.adc(self.traced_read(a));
+                let value = self.traced_read(a);
+                self.adc(value);
                 5 + u64::from(x)
             }
             0xe9 => {
@@ -331,37 +338,44 @@ impl Machine {
             }
             0xe5 => {
                 let a = self.addr_zero_page();
-                self.sbc(self.traced_read(a));
+                let value = self.traced_read(a);
+                self.sbc(value);
                 3
             }
             0xf5 => {
                 let a = self.addr_zero_page_x();
-                self.sbc(self.traced_read(a));
+                let value = self.traced_read(a);
+                self.sbc(value);
                 4
             }
             0xed => {
                 let a = self.addr_absolute();
-                self.sbc(self.traced_read(a));
+                let value = self.traced_read(a);
+                self.sbc(value);
                 4
             }
             0xfd => {
                 let (a, x) = self.addr_absolute_x();
-                self.sbc(self.traced_read(a));
+                let value = self.traced_read(a);
+                self.sbc(value);
                 4 + u64::from(x)
             }
             0xf9 => {
                 let (a, x) = self.addr_absolute_y();
-                self.sbc(self.traced_read(a));
+                let value = self.traced_read(a);
+                self.sbc(value);
                 4 + u64::from(x)
             }
             0xe1 => {
                 let a = self.addr_indexed_indirect();
-                self.sbc(self.traced_read(a));
+                let value = self.traced_read(a);
+                self.sbc(value);
                 6
             }
             0xf1 => {
                 let (a, x) = self.addr_indirect_indexed();
-                self.sbc(self.traced_read(a));
+                let value = self.traced_read(a);
+                self.sbc(value);
                 5 + u64::from(x)
             }
             0x29 => {
