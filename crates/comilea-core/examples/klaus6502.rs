@@ -52,6 +52,9 @@ fn main() {
             repeated = 0;
         }
     }
-    eprintln!("Klaus FAIL: instruction budget exceeded at ${:04x}", machine.cpu().pc);
+    eprintln!(
+        "Klaus FAIL: instruction budget exceeded at ${:04x}",
+        machine.cpu().pc
+    );
     process::exit(1);
 }
