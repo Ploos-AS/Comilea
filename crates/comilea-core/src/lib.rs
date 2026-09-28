@@ -91,8 +91,16 @@ impl Machine {
             0xb9 => { let (address, crossed) = self.addr_absolute_y(); self.load_a(self.read(address)); 4 + u64::from(crossed) }
             0xa1 => { let address = self.addr_indexed_indirect(); self.load_a(self.read(address)); 6 }
             0xb1 => { let (address, crossed) = self.addr_indirect_indexed(); self.load_a(self.read(address)); 5 + u64::from(crossed) }
-            0xa2 => { let value = self.fetch_byte(); self.cpu.x = value; self.set_zn(value); 2 }
-            0xa0 => { let value = self.fetch_byte(); self.cpu.y = value; self.set_zn(value); 2 }
+            0xa2 => { let value = self.fetch_byte(); self.load_x(value); 2 }
+            0xa6 => { let a = self.addr_zero_page(); self.load_x(self.read(a)); 3 }
+            0xb6 => { let a = self.addr_zero_page_y(); self.load_x(self.read(a)); 4 }
+            0xae => { let a = self.addr_absolute(); self.load_x(self.read(a)); 4 }
+            0xbe => { let (a, crossed) = self.addr_absolute_y(); self.load_x(self.read(a)); 4 + u64::from(crossed) }
+            0xa0 => { let value = self.fetch_byte(); self.load_y(value); 2 }
+            0xa4 => { let a = self.addr_zero_page(); self.load_y(self.read(a)); 3 }
+            0xb4 => { let a = self.addr_zero_page_x(); self.load_y(self.read(a)); 4 }
+            0xac => { let a = self.addr_absolute(); self.load_y(self.read(a)); 4 }
+            0xbc => { let (a, crossed) = self.addr_absolute_x(); self.load_y(self.read(a)); 4 + u64::from(crossed) }
             0x69 => { let value = self.fetch_byte(); self.adc(value); 2 }
             0xe9 => { let value = self.fetch_byte(); self.sbc(value); 2 }
             0x29 => { let value = self.fetch_byte(); self.cpu.a &= value; self.set_zn(self.cpu.a); 2 }
@@ -131,6 +139,12 @@ impl Machine {
             0x99 => { let (address, _) = self.addr_absolute_y(); self.write(address, self.cpu.a); 5 }
             0x81 => { let address = self.addr_indexed_indirect(); self.write(address, self.cpu.a); 6 }
             0x91 => { let (address, _) = self.addr_indirect_indexed(); self.write(address, self.cpu.a); 6 }
+            0x86 => { let a = self.addr_zero_page(); self.write(a, self.cpu.x); 3 }
+            0x96 => { let a = self.addr_zero_page_y(); self.write(a, self.cpu.x); 4 }
+            0x8e => { let a = self.addr_absolute(); self.write(a, self.cpu.x); 4 }
+            0x84 => { let a = self.addr_zero_page(); self.write(a, self.cpu.y); 3 }
+            0x94 => { let a = self.addr_zero_page_x(); self.write(a, self.cpu.y); 4 }
+            0x8c => { let a = self.addr_absolute(); self.write(a, self.cpu.y); 4 }
             0xaa => { self.cpu.x = self.cpu.a; self.set_zn(self.cpu.x); 2 }
             0x8a => { self.cpu.a = self.cpu.x; self.set_zn(self.cpu.a); 2 }
             0xa8 => { self.cpu.y = self.cpu.a; self.set_zn(self.cpu.y); 2 }
@@ -180,6 +194,10 @@ impl Machine {
         u16::from(self.fetch_byte().wrapping_add(self.cpu.x))
     }
 
+    fn addr_zero_page_y(&mut self) -> u16 {
+        u16::from(self.fetch_byte().wrapping_add(self.cpu.y))
+    }
+
     fn addr_absolute(&mut self) -> u16 { self.fetch_word() }
 
     fn addr_absolute_x(&mut self) -> (u16, bool) {
@@ -223,6 +241,16 @@ impl Machine {
 
     fn load_a(&mut self, value: u8) {
         self.cpu.a = value;
+        self.set_zn(value);
+    }
+
+    fn load_x(&mut self, value: u8) {
+        self.cpu.x = value;
+        self.set_zn(value);
+    }
+
+    fn load_y(&mut self, value: u8) {
+        self.cpu.y = value;
         self.set_zn(value);
     }
 
@@ -507,6 +535,19 @@ mod tests {
     fn implemented_decode_is_marked_in_catalog() {
         let implemented = [0xea,0xa9,0xa5,0xb5,0xad,0xbd,0xb9,0xa1,0xb1,0x69,0xe9,0x20,0x60,0x6c];
         for opcode in implemented { assert!(super::opcode_info(opcode).implemented, "opcode {opcode:02x}"); }
+    }
+
+    #[test]
+    fn ldx_ldy_and_stx_sty_addressing_modes_work() {
+        let mut m = machine_with(&[0xa0,0x02,0xb6,0xfe,0x96,0x10,0xa2,0x03,0xb4,0xfd,0x94,0x20]);
+        m.write(0x0000, 0x44);
+        m.step().unwrap();
+        assert_eq!(m.step(), Ok(4)); assert_eq!(m.cpu().x, 0x44);
+        assert_eq!(m.step(), Ok(4)); assert_eq!(m.read(0x0012), 0x44);
+        m.step().unwrap();
+        m.write(0x0000, 0x55);
+        assert_eq!(m.step(), Ok(4)); assert_eq!(m.cpu().y, 0x55);
+        assert_eq!(m.step(), Ok(4)); assert_eq!(m.read(0x0023), 0x55);
     }
 
     #[test]
