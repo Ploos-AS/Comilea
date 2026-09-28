@@ -54,5 +54,13 @@ jobs:
           test "$(wc -c < /tmp/6502_decimal_test.bin)" -eq 234
       - name: Bruce Clark NMOS decimal conformance
         run: cargo run -p comilea-core --example decimal6502 -- /tmp/6502_decimal_test.bin
+      - name: Fetch pinned SingleStep LDA immediate vectors
+        run: |
+          curl --fail --location --retry 3 \
+            -o /tmp/a9.json \
+            https://raw.githubusercontent.com/SingleStepTests/65x02/2f6980a2d95757486c7bee24355c360e40e2a224/6502/v1/a9.json
+          test "$(git hash-object /tmp/a9.json)" = 56b3774c21c9a13114879dd60c66390355365198
+      - name: SingleStep LDA immediate conformance
+        run: cargo run -p comilea-core --example singlestep6502 -- /tmp/a9.json
       - name: Headless smoke test
         run: cargo run -p comilea-cli -- --cycles 1000
