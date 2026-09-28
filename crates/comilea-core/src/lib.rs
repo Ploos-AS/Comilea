@@ -76,12 +76,21 @@ impl Machine {
         let opcode = self.fetch_byte();
         let used = match opcode {
             0xea => 2, // NOP
-            0xa9 => { let value = self.fetch_byte(); self.cpu.a = value; self.set_zn(value); 2 }
+            0xa9 => { let value = self.fetch_byte(); self.load_a(value); 2 }
+            0xa5 => { let address = self.addr_zero_page(); self.load_a(self.read(address)); 3 }
+            0xb5 => { let address = self.addr_zero_page_x(); self.load_a(self.read(address)); 4 }
+            0xad => { let address = self.addr_absolute(); self.load_a(self.read(address)); 4 }
+            0xbd => { let (address, crossed) = self.addr_absolute_x(); self.load_a(self.read(address)); 4 + u64::from(crossed) }
+            0xb9 => { let (address, crossed) = self.addr_absolute_y(); self.load_a(self.read(address)); 4 + u64::from(crossed) }
             0xa2 => { let value = self.fetch_byte(); self.cpu.x = value; self.set_zn(value); 2 }
             0xa0 => { let value = self.fetch_byte(); self.cpu.y = value; self.set_zn(value); 2 }
             0x69 => { let value = self.fetch_byte(); self.adc(value); 2 }
             0xe9 => { let value = self.fetch_byte(); self.sbc(value); 2 }
-            0x8d => { let address = self.fetch_word(); self.write(address, self.cpu.a); 4 }
+            0x85 => { let address = self.addr_zero_page(); self.write(address, self.cpu.a); 3 }
+            0x95 => { let address = self.addr_zero_page_x(); self.write(address, self.cpu.a); 4 }
+            0x8d => { let address = self.addr_absolute(); self.write(address, self.cpu.a); 4 }
+            0x9d => { let (address, _) = self.addr_absolute_x(); self.write(address, self.cpu.a); 5 }
+            0x99 => { let (address, _) = self.addr_absolute_y(); self.write(address, self.cpu.a); 5 }
             0x4c => { self.cpu.pc = self.fetch_word(); 3 }
             0x20 => { let target = self.fetch_word(); let return_pc = self.cpu.pc.wrapping_sub(1); self.push((return_pc >> 8) as u8); self.push(return_pc as u8); self.cpu.pc = target; 6 }
             0x60 => { let lo = self.pop(); let hi = self.pop(); self.cpu.pc = u16::from_le_bytes([lo, hi]).wrapping_add(1); 6 }
@@ -106,6 +115,31 @@ impl Machine {
         let lo = self.fetch_byte();
         let hi = self.fetch_byte();
         u16::from_le_bytes([lo, hi])
+    }
+
+    fn addr_zero_page(&mut self) -> u16 { u16::from(self.fetch_byte()) }
+
+    fn addr_zero_page_x(&mut self) -> u16 {
+        u16::from(self.fetch_byte().wrapping_add(self.cpu.x))
+    }
+
+    fn addr_absolute(&mut self) -> u16 { self.fetch_word() }
+
+    fn addr_absolute_x(&mut self) -> (u16, bool) {
+        let base = self.fetch_word();
+        let address = base.wrapping_add(u16::from(self.cpu.x));
+        (address, (base & 0xff00) != (address & 0xff00))
+    }
+
+    fn addr_absolute_y(&mut self) -> (u16, bool) {
+        let base = self.fetch_word();
+        let address = base.wrapping_add(u16::from(self.cpu.y));
+        (address, (base & 0xff00) != (address & 0xff00))
+    }
+
+    fn load_a(&mut self, value: u8) {
+        self.cpu.a = value;
+        self.set_zn(value);
     }
 
     fn push(&mut self, value: u8) {
@@ -235,6 +269,25 @@ mod tests {
         assert_eq!(m.cpu().a, 0x80); assert_ne!(m.cpu().status & FLAG_OVERFLOW, 0);
         m.step().unwrap();
         assert_eq!(m.cpu().a, 0x7e);
+    }
+
+    #[test]
+    fn lda_addressing_modes_read_expected_values() {
+        let mut m = machine_with(&[0xa2, 0x02, 0xa5, 0x10, 0xb5, 0x10, 0xad, 0x00, 0x20, 0xbd, 0xff, 0x20]);
+        m.write(0x0010, 0x11); m.write(0x0012, 0x22); m.write(0x2000, 0x33); m.write(0x2101, 0x44);
+        m.step().unwrap();
+        assert_eq!(m.step(), Ok(3)); assert_eq!(m.cpu().a, 0x11);
+        assert_eq!(m.step(), Ok(4)); assert_eq!(m.cpu().a, 0x22);
+        assert_eq!(m.step(), Ok(4)); assert_eq!(m.cpu().a, 0x33);
+        assert_eq!(m.step(), Ok(5)); assert_eq!(m.cpu().a, 0x44);
+    }
+
+    #[test]
+    fn sta_indexed_modes_write_expected_addresses() {
+        let mut m = machine_with(&[0xa9, 0x5a, 0xa2, 0x02, 0x95, 0xfe, 0x9d, 0xff, 0x20]);
+        m.step().unwrap(); m.step().unwrap();
+        assert_eq!(m.step(), Ok(4)); assert_eq!(m.read(0x0000), 0x5a);
+        assert_eq!(m.step(), Ok(5)); assert_eq!(m.read(0x2101), 0x5a);
     }
 
     #[test]
