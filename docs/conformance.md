@@ -20,3 +20,13 @@ Passing Comilea's unit tests means **internal regression coverage**. Passing an 
 ## Harness requirements
 
 The core must support deterministic setup of registers, status, PC, memory, and cycle count plus deterministic observation after one instruction. M0.13 begins by exposing explicit CPU-state setup; the external adapters should remain test-only code.
+
+## Klaus functional-test pin
+
+Upstream: `Klaus2m5/6502_65C02_functional_tests`
+
+Pinned revision: `7954e2dbb49c469ea286070bf46cdd71aeb29e4b`
+
+Source: `6502_functional_test.a65` (GPL-3.0-or-later, Klaus Dormann). The source documents an entry PC of `$0400`, requires writable memory for the default self-modifying configuration, and reports both failures and final success by looping at the current PC. The default configuration exercises documented NMOS 6502 opcodes only; decimal ADC/SBC uses valid BCD operands and does not qualify N/V/Z decimal flags.
+
+Comilea does not vendor this GPL test source into the MIT core. The CI adapter will fetch the pinned upstream revision and keep third-party licensing/provenance explicit.
