@@ -67,9 +67,15 @@ fn main() {
             .all(|&(address, value)| machine.read(address) == value);
         if !registers_match || !memory_matches {
             eprintln!(
-                "single-step FAIL {} #{}: actual={actual:?}, expected pc=${:04x} s=${:02x} a=${:02x} x=${:02x} y=${:02x} p=${:02x}",
+                "single-step FAIL {} #{}: initial pc=${:04x} s=${:02x} a=${:02x} x=${:02x} y=${:02x} p=${:02x}; actual={actual:?}, expected pc=${:04x} s=${:02x} a=${:02x} x=${:02x} y=${:02x} p=${:02x}",
                 case.name,
                 index + 1,
+                case.initial.pc,
+                case.initial.s,
+                case.initial.a,
+                case.initial.x,
+                case.initial.y,
+                case.initial.p,
                 expected.pc,
                 expected.s,
                 expected.a,
