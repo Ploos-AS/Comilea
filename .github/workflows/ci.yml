@@ -33,5 +33,14 @@ jobs:
           test "$(git hash-object /tmp/6502_functional_test.bin)" = c9a35e1d6bd2e7d85844da2abf7034d5ed820e6e
       - name: Klaus 6502 functional conformance
         run: cargo run -p comilea-core --example klaus6502 -- /tmp/6502_functional_test.bin
+      - name: Probe pinned AS65 decimal build
+        run: |
+          curl --fail --location --retry 3 \
+            -o /tmp/as65_142.zip \
+            https://raw.githubusercontent.com/Klaus2m5/6502_65C02_functional_tests/7954e2dbb49c469ea286070bf46cdd71aeb29e4b/as65_142.zip
+          test "$(git hash-object /tmp/as65_142.zip)" = 5bf94922a08bc4ea8739d91ddb98b6fce3cbf434
+          unzip -l /tmp/as65_142.zip
+          unzip -q /tmp/as65_142.zip -d /tmp/as65
+          find /tmp/as65 -maxdepth 3 -type f -print
       - name: Headless smoke test
         run: cargo run -p comilea-cli -- --cycles 1000
