@@ -82,6 +82,8 @@ impl Machine {
         let instruction_pc = self.cpu.pc;
         let opcode = self.fetch_byte();
         let used = match opcode {
+            0x00 => { let p=self.cpu.pc.wrapping_add(1); self.push((p>>8) as u8); self.push(p as u8); self.push(self.cpu.status|FLAG_BREAK|FLAG_UNUSED); self.cpu.status|=FLAG_INTERRUPT_DISABLE; self.cpu.pc=u16::from_le_bytes([self.read(0xfffe),self.read(0xffff)]); 7 }
+            0x40 => { self.cpu.status=(self.pop()|FLAG_UNUSED)&!FLAG_BREAK; let lo=self.pop(); let hi=self.pop(); self.cpu.pc=u16::from_le_bytes([lo,hi]); 6 }
             0xea => 2, // NOP
             0xa9 => { let value = self.fetch_byte(); self.load_a(value); 2 }
             0xa5 => { let address = self.addr_zero_page(); self.load_a(self.read(address)); 3 }
@@ -162,11 +164,29 @@ impl Machine {
             0x2a => { self.cpu.a = self.rol(self.cpu.a); 2 }
             0x6a => { self.cpu.a = self.ror(self.cpu.a); 2 }
             0x06 => { let a = self.addr_zero_page(); let v = self.asl(self.read(a)); self.write(a, v); 5 }
+            0x16 => { let a=self.addr_zero_page_x(); let v=self.asl(self.read(a)); self.write(a,v); 6 }
+            0x0e => { let a=self.addr_absolute(); let v=self.asl(self.read(a)); self.write(a,v); 6 }
+            0x1e => { let (a,_)=self.addr_absolute_x(); let v=self.asl(self.read(a)); self.write(a,v); 7 }
             0x46 => { let a = self.addr_zero_page(); let v = self.lsr(self.read(a)); self.write(a, v); 5 }
+            0x56 => { let a=self.addr_zero_page_x(); let v=self.lsr(self.read(a)); self.write(a,v); 6 }
+            0x4e => { let a=self.addr_absolute(); let v=self.lsr(self.read(a)); self.write(a,v); 6 }
+            0x5e => { let (a,_)=self.addr_absolute_x(); let v=self.lsr(self.read(a)); self.write(a,v); 7 }
             0x26 => { let a = self.addr_zero_page(); let v = self.rol(self.read(a)); self.write(a, v); 5 }
+            0x36 => { let a=self.addr_zero_page_x(); let v=self.rol(self.read(a)); self.write(a,v); 6 }
+            0x2e => { let a=self.addr_absolute(); let v=self.rol(self.read(a)); self.write(a,v); 6 }
+            0x3e => { let (a,_)=self.addr_absolute_x(); let v=self.rol(self.read(a)); self.write(a,v); 7 }
             0x66 => { let a = self.addr_zero_page(); let v = self.ror(self.read(a)); self.write(a, v); 5 }
+            0x76 => { let a=self.addr_zero_page_x(); let v=self.ror(self.read(a)); self.write(a,v); 6 }
+            0x6e => { let a=self.addr_absolute(); let v=self.ror(self.read(a)); self.write(a,v); 6 }
+            0x7e => { let (a,_)=self.addr_absolute_x(); let v=self.ror(self.read(a)); self.write(a,v); 7 }
             0xe6 => { let a = self.addr_zero_page(); let v = self.read(a).wrapping_add(1); self.write(a, v); self.set_zn(v); 5 }
+            0xf6 => { let a=self.addr_zero_page_x(); let v=self.read(a).wrapping_add(1); self.write(a,v); self.set_zn(v); 6 }
+            0xee => { let a=self.addr_absolute(); let v=self.read(a).wrapping_add(1); self.write(a,v); self.set_zn(v); 6 }
+            0xfe => { let (a,_)=self.addr_absolute_x(); let v=self.read(a).wrapping_add(1); self.write(a,v); self.set_zn(v); 7 }
             0xc6 => { let a = self.addr_zero_page(); let v = self.read(a).wrapping_sub(1); self.write(a, v); self.set_zn(v); 5 }
+            0xd6 => { let a=self.addr_zero_page_x(); let v=self.read(a).wrapping_sub(1); self.write(a,v); self.set_zn(v); 6 }
+            0xce => { let a=self.addr_absolute(); let v=self.read(a).wrapping_sub(1); self.write(a,v); self.set_zn(v); 6 }
+            0xde => { let (a,_)=self.addr_absolute_x(); let v=self.read(a).wrapping_sub(1); self.write(a,v); self.set_zn(v); 7 }
             0x48 => { self.push(self.cpu.a); 3 }
             0x68 => { let v = self.pop(); self.cpu.a = v; self.set_zn(v); 4 }
             0x08 => { self.push(self.cpu.status | FLAG_BREAK | FLAG_UNUSED); 3 }
