@@ -101,14 +101,60 @@ impl Machine {
             0xb4 => { let a = self.addr_zero_page_x(); self.load_y(self.read(a)); 4 }
             0xac => { let a = self.addr_absolute(); self.load_y(self.read(a)); 4 }
             0xbc => { let (a, crossed) = self.addr_absolute_x(); self.load_y(self.read(a)); 4 + u64::from(crossed) }
-            0x69 => { let value = self.fetch_byte(); self.adc(value); 2 }
-            0xe9 => { let value = self.fetch_byte(); self.sbc(value); 2 }
-            0x29 => { let value = self.fetch_byte(); self.cpu.a &= value; self.set_zn(self.cpu.a); 2 }
-            0x09 => { let value = self.fetch_byte(); self.cpu.a |= value; self.set_zn(self.cpu.a); 2 }
-            0x49 => { let value = self.fetch_byte(); self.cpu.a ^= value; self.set_zn(self.cpu.a); 2 }
-            0xc9 => { let value = self.fetch_byte(); self.compare(self.cpu.a, value); 2 }
-            0xe0 => { let value = self.fetch_byte(); self.compare(self.cpu.x, value); 2 }
-            0xc0 => { let value = self.fetch_byte(); self.compare(self.cpu.y, value); 2 }
+            0x69 => { let v=self.fetch_byte(); self.adc(v); 2 }
+            0x65 => { let a=self.addr_zero_page(); self.adc(self.read(a)); 3 }
+            0x75 => { let a=self.addr_zero_page_x(); self.adc(self.read(a)); 4 }
+            0x6d => { let a=self.addr_absolute(); self.adc(self.read(a)); 4 }
+            0x7d => { let (a,x)=self.addr_absolute_x(); self.adc(self.read(a)); 4+u64::from(x) }
+            0x79 => { let (a,x)=self.addr_absolute_y(); self.adc(self.read(a)); 4+u64::from(x) }
+            0x61 => { let a=self.addr_indexed_indirect(); self.adc(self.read(a)); 6 }
+            0x71 => { let (a,x)=self.addr_indirect_indexed(); self.adc(self.read(a)); 5+u64::from(x) }
+            0xe9 => { let v=self.fetch_byte(); self.sbc(v); 2 }
+            0xe5 => { let a=self.addr_zero_page(); self.sbc(self.read(a)); 3 }
+            0xf5 => { let a=self.addr_zero_page_x(); self.sbc(self.read(a)); 4 }
+            0xed => { let a=self.addr_absolute(); self.sbc(self.read(a)); 4 }
+            0xfd => { let (a,x)=self.addr_absolute_x(); self.sbc(self.read(a)); 4+u64::from(x) }
+            0xf9 => { let (a,x)=self.addr_absolute_y(); self.sbc(self.read(a)); 4+u64::from(x) }
+            0xe1 => { let a=self.addr_indexed_indirect(); self.sbc(self.read(a)); 6 }
+            0xf1 => { let (a,x)=self.addr_indirect_indexed(); self.sbc(self.read(a)); 5+u64::from(x) }
+            0x29 => { let v=self.fetch_byte(); self.and_a(v); 2 }
+            0x25 => { let a=self.addr_zero_page(); self.and_a(self.read(a)); 3 }
+            0x35 => { let a=self.addr_zero_page_x(); self.and_a(self.read(a)); 4 }
+            0x2d => { let a=self.addr_absolute(); self.and_a(self.read(a)); 4 }
+            0x3d => { let (a,x)=self.addr_absolute_x(); self.and_a(self.read(a)); 4+u64::from(x) }
+            0x39 => { let (a,x)=self.addr_absolute_y(); self.and_a(self.read(a)); 4+u64::from(x) }
+            0x21 => { let a=self.addr_indexed_indirect(); self.and_a(self.read(a)); 6 }
+            0x31 => { let (a,x)=self.addr_indirect_indexed(); self.and_a(self.read(a)); 5+u64::from(x) }
+            0x09 => { let v=self.fetch_byte(); self.ora_a(v); 2 }
+            0x05 => { let a=self.addr_zero_page(); self.ora_a(self.read(a)); 3 }
+            0x15 => { let a=self.addr_zero_page_x(); self.ora_a(self.read(a)); 4 }
+            0x0d => { let a=self.addr_absolute(); self.ora_a(self.read(a)); 4 }
+            0x1d => { let (a,x)=self.addr_absolute_x(); self.ora_a(self.read(a)); 4+u64::from(x) }
+            0x19 => { let (a,x)=self.addr_absolute_y(); self.ora_a(self.read(a)); 4+u64::from(x) }
+            0x01 => { let a=self.addr_indexed_indirect(); self.ora_a(self.read(a)); 6 }
+            0x11 => { let (a,x)=self.addr_indirect_indexed(); self.ora_a(self.read(a)); 5+u64::from(x) }
+            0x49 => { let v=self.fetch_byte(); self.eor_a(v); 2 }
+            0x45 => { let a=self.addr_zero_page(); self.eor_a(self.read(a)); 3 }
+            0x55 => { let a=self.addr_zero_page_x(); self.eor_a(self.read(a)); 4 }
+            0x4d => { let a=self.addr_absolute(); self.eor_a(self.read(a)); 4 }
+            0x5d => { let (a,x)=self.addr_absolute_x(); self.eor_a(self.read(a)); 4+u64::from(x) }
+            0x59 => { let (a,x)=self.addr_absolute_y(); self.eor_a(self.read(a)); 4+u64::from(x) }
+            0x41 => { let a=self.addr_indexed_indirect(); self.eor_a(self.read(a)); 6 }
+            0x51 => { let (a,x)=self.addr_indirect_indexed(); self.eor_a(self.read(a)); 5+u64::from(x) }
+            0xc9 => { let v=self.fetch_byte(); self.cmp_a(v); 2 }
+            0xc5 => { let a=self.addr_zero_page(); self.cmp_a(self.read(a)); 3 }
+            0xd5 => { let a=self.addr_zero_page_x(); self.cmp_a(self.read(a)); 4 }
+            0xcd => { let a=self.addr_absolute(); self.cmp_a(self.read(a)); 4 }
+            0xdd => { let (a,x)=self.addr_absolute_x(); self.cmp_a(self.read(a)); 4+u64::from(x) }
+            0xd9 => { let (a,x)=self.addr_absolute_y(); self.cmp_a(self.read(a)); 4+u64::from(x) }
+            0xc1 => { let a=self.addr_indexed_indirect(); self.cmp_a(self.read(a)); 6 }
+            0xd1 => { let (a,x)=self.addr_indirect_indexed(); self.cmp_a(self.read(a)); 5+u64::from(x) }
+            0xe0 => { let v=self.fetch_byte(); self.compare(self.cpu.x,v); 2 }
+            0xe4 => { let a=self.addr_zero_page(); self.compare(self.cpu.x,self.read(a)); 3 }
+            0xec => { let a=self.addr_absolute(); self.compare(self.cpu.x,self.read(a)); 4 }
+            0xc0 => { let v=self.fetch_byte(); self.compare(self.cpu.y,v); 2 }
+            0xc4 => { let a=self.addr_zero_page(); self.compare(self.cpu.y,self.read(a)); 3 }
+            0xcc => { let a=self.addr_absolute(); self.compare(self.cpu.y,self.read(a)); 4 }
             0x24 => { let address = self.addr_zero_page(); self.bit(self.read(address)); 3 }
             0x2c => { let address = self.addr_absolute(); self.bit(self.read(address)); 4 }
             0x0a => { self.cpu.a = self.asl(self.cpu.a); 2 }
@@ -287,6 +333,12 @@ impl Machine {
     fn sbc(&mut self, value: u8) {
         self.adc(!value);
     }
+
+    fn and_a(&mut self, value: u8) { self.cpu.a &= value; self.set_zn(self.cpu.a); }
+    fn ora_a(&mut self, value: u8) { self.cpu.a |= value; self.set_zn(self.cpu.a); }
+    fn eor_a(&mut self, value: u8) { self.cpu.a ^= value; self.set_zn(self.cpu.a); }
+
+    fn cmp_a(&mut self, value: u8) { self.compare(self.cpu.a, value); }
 
     fn compare(&mut self, register: u8, value: u8) {
         let result = register.wrapping_sub(value);
