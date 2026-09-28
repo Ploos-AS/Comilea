@@ -1046,14 +1046,16 @@ impl Machine {
         (address, crossed)
     }
 
-    fn read_zero_page_word(&self, pointer: u8) -> u16 {
-        let lo = self.read(u16::from(pointer));
-        let hi = self.read(u16::from(pointer.wrapping_add(1)));
+    fn read_zero_page_word(&mut self, pointer: u8) -> u16 {
+        let lo = self.traced_read(u16::from(pointer));
+        let hi = self.traced_read(u16::from(pointer.wrapping_add(1)));
         u16::from_le_bytes([lo, hi])
     }
 
     fn addr_indexed_indirect(&mut self) -> u16 {
-        let pointer = self.fetch_byte().wrapping_add(self.cpu.x);
+        let base = self.fetch_byte();
+        self.traced_read(u16::from(base));
+        let pointer = base.wrapping_add(self.cpu.x);
         self.read_zero_page_word(pointer)
     }
 
