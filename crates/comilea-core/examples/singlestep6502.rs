@@ -8,6 +8,7 @@ struct Case {
     initial: State,
     #[serde(rename = "final")]
     final_state: State,
+    cycles: Vec<serde_json::Value>,
 }
 
 #[derive(Deserialize)]
@@ -48,8 +49,22 @@ fn main() {
             y: case.initial.y,
             status: case.initial.p,
         });
+        let cycles_before = machine.cycles();
         if let Err(error) = machine.step() {
             eprintln!("single-step FAIL {} #{}: {error:?}", case.name, index + 1);
+            process::exit(1);
+        }
+
+        let used_cycles = machine.cycles() - cycles_before;
+        let expected_cycles = case.cycles.len() as u64;
+        if used_cycles != expected_cycles {
+            eprintln!(
+                "single-step CYCLE FAIL {} #{}: actual={} expected={}",
+                case.name,
+                index + 1,
+                used_cycles,
+                expected_cycles
+            );
             process::exit(1);
         }
 
