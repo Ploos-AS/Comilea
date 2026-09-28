@@ -1006,6 +1006,7 @@ impl Machine {
                 // observable when the stack overlaps the instruction stream.
                 let target_lo = self.fetch_byte();
                 let return_pc = self.cpu.pc;
+                self.traced_read(0x0100 | u16::from(self.cpu.sp));
                 self.push((return_pc >> 8) as u8);
                 self.push(return_pc as u8);
                 let target_hi = self.fetch_byte();
