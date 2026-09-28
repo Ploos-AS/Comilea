@@ -4,6 +4,8 @@ const FLAG_CARRY: u8 = 0x01;
 const FLAG_ZERO: u8 = 0x02;
 const FLAG_INTERRUPT_DISABLE: u8 = 0x04;
 const FLAG_DECIMAL: u8 = 0x08;
+const FLAG_BREAK: u8 = 0x10;
+const FLAG_UNUSED: u8 = 0x20;
 const FLAG_OVERFLOW: u8 = 0x40;
 const FLAG_NEGATIVE: u8 = 0x80;
 
@@ -102,6 +104,16 @@ impl Machine {
             0x4a => { self.cpu.a = self.lsr(self.cpu.a); 2 }
             0x2a => { self.cpu.a = self.rol(self.cpu.a); 2 }
             0x6a => { self.cpu.a = self.ror(self.cpu.a); 2 }
+            0x06 => { let a = self.addr_zero_page(); let v = self.asl(self.read(a)); self.write(a, v); 5 }
+            0x46 => { let a = self.addr_zero_page(); let v = self.lsr(self.read(a)); self.write(a, v); 5 }
+            0x26 => { let a = self.addr_zero_page(); let v = self.rol(self.read(a)); self.write(a, v); 5 }
+            0x66 => { let a = self.addr_zero_page(); let v = self.ror(self.read(a)); self.write(a, v); 5 }
+            0xe6 => { let a = self.addr_zero_page(); let v = self.read(a).wrapping_add(1); self.write(a, v); self.set_zn(v); 5 }
+            0xc6 => { let a = self.addr_zero_page(); let v = self.read(a).wrapping_sub(1); self.write(a, v); self.set_zn(v); 5 }
+            0x48 => { self.push(self.cpu.a); 3 }
+            0x68 => { let v = self.pop(); self.cpu.a = v; self.set_zn(v); 4 }
+            0x08 => { self.push(self.cpu.status | FLAG_BREAK | FLAG_UNUSED); 3 }
+            0x28 => { self.cpu.status = (self.pop() | FLAG_UNUSED) & !FLAG_BREAK; 4 }
             0x18 => { self.cpu.status &= !FLAG_CARRY; 2 }
             0x38 => { self.cpu.status |= FLAG_CARRY; 2 }
             0x58 => { self.cpu.status &= !FLAG_INTERRUPT_DISABLE; 2 }
@@ -130,6 +142,12 @@ impl Machine {
             0x6c => { self.cpu.pc = self.addr_jmp_indirect(); 5 }
             0x20 => { let target = self.fetch_word(); let return_pc = self.cpu.pc.wrapping_sub(1); self.push((return_pc >> 8) as u8); self.push(return_pc as u8); self.cpu.pc = target; 6 }
             0x60 => { let lo = self.pop(); let hi = self.pop(); self.cpu.pc = u16::from_le_bytes([lo, hi]).wrapping_add(1); 6 }
+            0x10 => self.branch(self.cpu.status & FLAG_NEGATIVE == 0),
+            0x30 => self.branch(self.cpu.status & FLAG_NEGATIVE != 0),
+            0x50 => self.branch(self.cpu.status & FLAG_OVERFLOW == 0),
+            0x70 => self.branch(self.cpu.status & FLAG_OVERFLOW != 0),
+            0x90 => self.branch(self.cpu.status & FLAG_CARRY == 0),
+            0xb0 => self.branch(self.cpu.status & FLAG_CARRY != 0),
             0xd0 => self.branch(self.cpu.status & FLAG_ZERO == 0),
             0xf0 => self.branch(self.cpu.status & FLAG_ZERO != 0),
             _ => {
@@ -447,6 +465,33 @@ mod tests {
         assert_ne!(m.cpu().status & FLAG_DECIMAL, 0);
         for _ in 0..3 { m.step().unwrap(); }
         assert_eq!(m.cpu().status & (FLAG_CARRY | FLAG_INTERRUPT_DISABLE | FLAG_DECIMAL), 0);
+    }
+
+    #[test]
+    fn memory_rmw_and_inc_dec_modify_zero_page() {
+        let mut m = machine_with(&[0x06, 0x10, 0x46, 0x10, 0xe6, 0x10, 0xc6, 0x10]);
+        m.write(0x0010, 0x81);
+        for _ in 0..4 { assert_eq!(m.step(), Ok(5)); }
+        assert_eq!(m.read(0x0010), 0x01);
+    }
+
+    #[test]
+    fn stack_accumulator_and_status_round_trip() {
+        let mut m = machine_with(&[0xa9, 0x42, 0x48, 0xa9, 0x00, 0x68, 0x38, 0x08, 0x18, 0x28]);
+        for _ in 0..10 { m.step().unwrap(); }
+        assert_eq!(m.cpu().a, 0x42);
+        assert_ne!(m.cpu().status & FLAG_CARRY, 0);
+        assert_eq!(m.cpu().status & FLAG_BREAK, 0);
+        assert_ne!(m.cpu().status & FLAG_UNUSED, 0);
+    }
+
+    #[test]
+    fn all_branch_conditions_have_decode_paths() {
+        let programs = [[0x10,0x00],[0x30,0x00],[0x50,0x00],[0x70,0x00],[0x90,0x00],[0xb0,0x00],[0xd0,0x00],[0xf0,0x00]];
+        for program in programs {
+            let mut m = machine_with(&program);
+            assert!(m.step().is_ok());
+        }
     }
 
     #[test]
