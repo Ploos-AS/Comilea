@@ -32,7 +32,7 @@ pub enum StepError {
 #[derive(Clone)]
 pub struct Machine {
     cpu: Cpu6510,
-    memory: Box<[u8; 65_536]>,
+    memory: Box<[u8]>,
     cycles: u64,
 }
 
@@ -45,7 +45,7 @@ impl Machine {
     pub fn new() -> Self {
         Self {
             cpu: Cpu6510 { sp: 0xfd, status: 0x24, ..Cpu6510::default() },
-            memory: vec![0; 65_536].into_boxed_slice().try_into().expect("64 KiB memory has exact size"),
+            memory: vec![0; 65_536].into_boxed_slice(),
             cycles: 0,
         }
     }
