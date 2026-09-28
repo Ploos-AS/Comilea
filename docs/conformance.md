@@ -29,4 +29,4 @@ Pinned revision: `7954e2dbb49c469ea286070bf46cdd71aeb29e4b`
 
 Source: `6502_functional_test.a65` (GPL-3.0-or-later, Klaus Dormann). The source documents an entry PC of `$0400`, requires writable memory for the default self-modifying configuration, and reports both failures and final success by looping at the current PC. The default configuration exercises documented NMOS 6502 opcodes only; decimal ADC/SBC uses valid BCD operands and does not qualify N/V/Z decimal flags.
 
-Comilea does not vendor this GPL test source into the MIT core. The CI adapter will fetch the pinned upstream revision and keep third-party licensing/provenance explicit.
+Comilea does not vendor this GPL test source into the MIT core. The CI adapter fetches the upstream prebuilt 64 KiB image from the pinned revision. Its Git blob SHA is `c9a35e1d6bd2e7d85844da2abf7034d5ed820e6e`; the corresponding pinned listing identifies `$3469` as the final success self-loop. CI verifies the downloaded image against the pinned Git object identity before execution and keeps third-party licensing/provenance explicit.
