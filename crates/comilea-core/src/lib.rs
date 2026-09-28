@@ -93,7 +93,11 @@ impl Machine {
 
     pub fn write(&mut self, address: u16, value: u8) {
         if self.tracing {
-            self.bus_trace.push(BusAccess { address, value, write: true });
+            self.bus_trace.push(BusAccess {
+                address,
+                value,
+                write: true,
+            });
         }
         self.memory[usize::from(address)] = value;
     }
@@ -115,7 +119,11 @@ impl Machine {
     fn traced_read(&mut self, address: u16) -> u8 {
         let value = self.read(address);
         if self.tracing {
-            self.bus_trace.push(BusAccess { address, value, write: false });
+            self.bus_trace.push(BusAccess {
+                address,
+                value,
+                write: false,
+            });
         }
         value
     }
