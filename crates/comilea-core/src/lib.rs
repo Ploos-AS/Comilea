@@ -8,8 +8,8 @@
 
 pub mod opcode;
 pub mod port6510;
-pub use port6510::ProcessorPort6510;
 pub use opcode::{opcode_info, OpcodeClass, OpcodeInfo, OFFICIAL_OPCODE_COUNT};
+pub use port6510::ProcessorPort6510;
 
 const FLAG_CARRY: u8 = 0x01;
 const FLAG_ZERO: u8 = 0x02;
