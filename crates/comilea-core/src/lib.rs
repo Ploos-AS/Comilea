@@ -592,12 +592,14 @@ impl Machine {
             }
             0xe4 => {
                 let a = self.addr_zero_page();
-                self.compare(self.cpu.x, self.read(a));
+                let value = self.traced_read(a);
+                self.compare(self.cpu.x, value);
                 3
             }
             0xec => {
                 let a = self.addr_absolute();
-                self.compare(self.cpu.x, self.read(a));
+                let value = self.traced_read(a);
+                self.compare(self.cpu.x, value);
                 4
             }
             0xc0 => {
@@ -607,22 +609,26 @@ impl Machine {
             }
             0xc4 => {
                 let a = self.addr_zero_page();
-                self.compare(self.cpu.y, self.read(a));
+                let value = self.traced_read(a);
+                self.compare(self.cpu.y, value);
                 3
             }
             0xcc => {
                 let a = self.addr_absolute();
-                self.compare(self.cpu.y, self.read(a));
+                let value = self.traced_read(a);
+                self.compare(self.cpu.y, value);
                 4
             }
             0x24 => {
                 let address = self.addr_zero_page();
-                self.bit(self.read(address));
+                let value = self.traced_read(address);
+                self.bit(value);
                 3
             }
             0x2c => {
                 let address = self.addr_absolute();
-                self.bit(self.read(address));
+                let value = self.traced_read(address);
+                self.bit(value);
                 4
             }
             0x0a => {
