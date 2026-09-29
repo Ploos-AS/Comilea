@@ -49,8 +49,25 @@ The same strict CI gate also passes:
 
 SingleStep qualification exposed and fixed observable NMOS behavior including decimal ADC flag staging and JSR ordering when stack writes overlap the instruction stream.
 
+## M0.14 exact cycle and bus qualification result
+
+M0.14 extends the same pinned SingleStepTests corpus from architectural final-state qualification to cycle-accurate CPU bus qualification.
+
+All **151 documented NMOS 6502 opcodes** pass **10,000 vectors per opcode**, for **1,510,000 passing exact-bus single-step vectors**. For every vector the harness now verifies:
+
+- final PC, SP, A, X, Y and processor status;
+- relevant final RAM values;
+- total instruction cycle count;
+- the complete ordered bus-access sequence;
+- address and data value for every observed bus access;
+- read versus write direction.
+
+This includes observable NMOS details such as indexed and page-cross dummy reads, zero-page indexed dummy cycles, read-modify-write read/dummy-write/final-write sequencing, stack push/pull cycles, taken-branch cycles, JSR/RTS ordering, BRK/RTI sequencing and the NMOS indirect-JMP page-wrap behavior.
+
+CI uses one canonical 151-opcode exact-bus gate against the immutable SingleStepTests revision already pinned above. The Klaus functional and Bruce Clark decimal gates remain independent complementary checks.
+
 ### Scope boundary
 
-This milestone does **not** yet claim cycle-by-cycle bus conformance. Although the upstream SingleStep vectors include a `cycles` bus trace, the M0.13 harness intentionally verifies architectural final state and relevant RAM only. Cycle-count and bus-sequence qualification are separate follow-up gates.
+M0.14 qualifies the documented **NMOS 6502 CPU instruction bus behavior represented by the pinned vectors**. It does not claim undocumented-opcode conformance, asynchronous line-level interrupt timing, or complete 6510/C64 machine conformance.
 
-M0.13 also does not by itself qualify C64 machine behavior. The 6510 I/O port at `$0000/$0001`, PLA/memory banking, VIC-II, SID, CIA devices, interrupts at machine timing boundaries and complete C64 system timing remain separate machine-level work.
+M0.14 also does not by itself qualify C64 machine behavior. The 6510 I/O port at `$0000/$0001`, PLA/memory banking, VIC-II, SID, CIA devices, interrupts at machine timing boundaries and complete C64 system timing remain separate machine-level work.
