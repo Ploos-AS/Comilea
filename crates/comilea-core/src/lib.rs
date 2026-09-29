@@ -1186,11 +1186,6 @@ impl Machine {
         self.cpu.sp = self.cpu.sp.wrapping_sub(1);
     }
 
-    fn pop(&mut self) -> u8 {
-        self.cpu.sp = self.cpu.sp.wrapping_add(1);
-        self.read(0x0100 | u16::from(self.cpu.sp))
-    }
-
     fn pop_traced(&mut self) -> u8 {
         self.cpu.sp = self.cpu.sp.wrapping_add(1);
         self.traced_read(0x0100 | u16::from(self.cpu.sp))
