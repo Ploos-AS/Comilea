@@ -222,52 +222,10 @@ jobs:
             echo "== opcode $opcode =="
             cargo run -p comilea-core --example singlestep6502 -- "/tmp/$opcode.json"
           done
-      - name: SingleStep bus-trace qualification (2-cycle implied/accumulator)
+      - name: SingleStep official NMOS 6502 exact bus conformance (151 opcodes)
         run: |
-          for opcode in ea aa 8a a8 98 ba 9a e8 ca c8 88 18 38 58 78 b8 d8 f8 0a 2a 4a 6a; do
-            echo "== bus opcode $opcode =="
-            cargo run -p comilea-core --example singlestep6502 -- "/tmp/$opcode.json" --bus
-          done
-      - name: SingleStep bus-trace qualification (direct reads)
-        run: |
-          for opcode in a5 ad a6 ae a4 ac 65 6d e5 ed; do
-            echo "== bus read opcode $opcode =="
-            cargo run -p comilea-core --example singlestep6502 -- "/tmp/$opcode.json" --bus
-          done
-      - name: SingleStep bus-trace qualification (indexed reads)
-        run: |
-          for opcode in b5 b6 b4 bd b9 be bc 75 7d 79 f5 fd f9 a1 b1 61 71 e1 f1; do
-            echo "== bus indexed opcode $opcode =="
-            cargo run -p comilea-core --example singlestep6502 -- "/tmp/$opcode.json" --bus
-          done
-      - name: SingleStep bus-trace qualification (logical/compare reads)
-        run: |
-          for opcode in 25 35 2d 3d 39 21 31 05 15 0d 1d 19 01 11 45 55 4d 5d 59 41 51 c5 d5 cd dd d9 c1 d1; do
-            echo "== bus ALU-read opcode $opcode =="
-            cargo run -p comilea-core --example singlestep6502 -- "/tmp/$opcode.json" --bus
-          done
-      - name: SingleStep bus-trace qualification (stores)
-        run: |
-          for opcode in 85 95 8d 9d 99 81 91 86 96 8e 84 94 8c; do
-            echo "== bus store opcode $opcode =="
-            cargo run -p comilea-core --example singlestep6502 -- "/tmp/$opcode.json" --bus
-          done
-      - name: SingleStep bus-trace qualification (RMW)
-        run: |
-          for opcode in 06 16 0e 1e 46 56 4e 5e 26 36 2e 3e 66 76 6e 7e e6 f6 ee fe c6 d6 ce de; do
-            echo "== bus RMW opcode $opcode =="
-            cargo run -p comilea-core --example singlestep6502 -- "/tmp/$opcode.json" --bus
-          done
-      - name: SingleStep bus-trace qualification (branch/stack/control)
-        run: |
-          for opcode in 10 30 50 70 90 b0 d0 f0 48 68 08 28 20 60 4c 6c 00 40; do
-            echo "== bus control opcode $opcode =="
-            cargo run -p comilea-core --example singlestep6502 -- "/tmp/$opcode.json" --bus
-          done
-      - name: SingleStep bus-trace qualification (all remaining official opcodes)
-        run: |
-          for opcode in 09 24 29 2c 49 69 a0 a2 a9 c0 c4 c9 cc e0 e4 e9 ec; do
-            echo "== bus final opcode $opcode =="
+          for opcode in 00 01 05 06 08 09 0a 0d 0e 10 11 15 16 18 19 1d 1e 20 21 24 25 26 28 29 2a 2c 2d 2e 30 31 35 36 38 39 3d 3e 40 41 45 46 48 49 4a 4c 4d 4e 50 51 55 56 58 59 5d 5e 60 61 65 66 68 69 6a 6c 6d 6e 70 71 75 76 78 79 7d 7e 81 84 85 86 88 8a 8c 8d 8e 90 91 94 95 96 98 99 9a 9d a0 a1 a2 a4 a5 a6 a8 a9 aa ac ad ae b0 b1 b4 b5 b6 b8 b9 ba bc bd be c0 c1 c4 c5 c6 c8 c9 ca cc cd ce d0 d1 d5 d6 d8 d9 dd de e0 e1 e4 e5 e6 e8 e9 ea ec ed ee f0 f1 f5 f6 f8 f9 fd fe; do
+            echo "== exact bus opcode $opcode =="
             cargo run -p comilea-core --example singlestep6502 -- "/tmp/$opcode.json" --bus
           done
       - name: Headless smoke test
