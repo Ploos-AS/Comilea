@@ -7,6 +7,8 @@
 )]
 
 pub mod opcode;
+pub mod port6510;
+pub use port6510::ProcessorPort6510;
 pub use opcode::{opcode_info, OpcodeClass, OpcodeInfo, OFFICIAL_OPCODE_COUNT};
 
 const FLAG_CARRY: u8 = 0x01;
@@ -47,6 +49,7 @@ pub struct Machine {
     cycles: u64,
     bus_trace: Vec<BusAccess>,
     tracing: bool,
+    processor_port: ProcessorPort6510,
 }
 
 impl Default for Machine {
@@ -68,6 +71,7 @@ impl Machine {
             cycles: 0,
             bus_trace: Vec::new(),
             tracing: false,
+            processor_port: ProcessorPort6510::default(),
         }
     }
 
@@ -88,7 +92,11 @@ impl Machine {
 
     #[must_use]
     pub fn read(&self, address: u16) -> u8 {
-        self.memory[usize::from(address)]
+        match address {
+            0x0000 => self.processor_port.ddr(),
+            0x0001 => self.processor_port.read_data(),
+            _ => self.memory[usize::from(address)],
+        }
     }
 
     pub fn write(&mut self, address: u16, value: u8) {
@@ -99,7 +107,20 @@ impl Machine {
                 write: true,
             });
         }
-        self.memory[usize::from(address)] = value;
+        match address {
+            0x0000 => self.processor_port.write_ddr(value),
+            0x0001 => self.processor_port.write_data(value),
+            _ => self.memory[usize::from(address)] = value,
+        }
+    }
+
+    #[must_use]
+    pub const fn processor_port(&self) -> &ProcessorPort6510 {
+        &self.processor_port
+    }
+
+    pub fn set_processor_port_input(&mut self, value: u8) {
+        self.processor_port.set_input(value);
     }
 
     #[must_use]
