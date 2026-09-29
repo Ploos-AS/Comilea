@@ -186,9 +186,11 @@ impl Machine {
                 7
             }
             0x40 => {
-                self.cpu.status = (self.pop() | FLAG_UNUSED) & !FLAG_BREAK;
-                let lo = self.pop();
-                let hi = self.pop();
+                self.implied_cycle();
+                self.traced_read(0x0100 | u16::from(self.cpu.sp));
+                self.cpu.status = (self.pop_traced() | FLAG_UNUSED) & !FLAG_BREAK;
+                let lo = self.pop_traced();
+                let hi = self.pop_traced();
                 self.cpu.pc = u16::from_le_bytes([lo, hi]);
                 6
             }
