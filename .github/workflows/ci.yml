@@ -264,5 +264,11 @@ jobs:
             echo "== bus control opcode $opcode =="
             cargo run -p comilea-core --example singlestep6502 -- "/tmp/$opcode.json" --bus
           done
+      - name: SingleStep bus-trace qualification (all remaining official opcodes)
+        run: |
+          for opcode in 09 24 29 2c 49 69 a0 a2 a9 c0 c4 c9 cc e0 e4 e9 ec; do
+            echo "== bus final opcode $opcode =="
+            cargo run -p comilea-core --example singlestep6502 -- "/tmp/$opcode.json" --bus
+          done
       - name: Headless smoke test
         run: cargo run -p comilea-cli -- --cycles 1000
