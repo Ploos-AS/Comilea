@@ -27,7 +27,9 @@ pub struct C64 {
 }
 
 impl Default for C64 {
-    fn default() -> Self { Self::new() }
+    fn default() -> Self {
+        Self::new()
+    }
 }
 
 impl C64 {
@@ -43,11 +45,19 @@ impl C64 {
     }
 
     #[must_use]
-    pub const fn cpu(&self) -> &Machine { &self.cpu }
-    pub fn cpu_mut(&mut self) -> &mut Machine { &mut self.cpu }
+    pub const fn cpu(&self) -> &Machine {
+        &self.cpu
+    }
+    pub fn cpu_mut(&mut self) -> &mut Machine {
+        &mut self.cpu
+    }
     #[must_use]
-    pub const fn processor_port(&self) -> &ProcessorPort6510 { &self.processor_port }
-    pub fn set_processor_port_input(&mut self, value: u8) { self.processor_port.set_input(value); }
+    pub const fn processor_port(&self) -> &ProcessorPort6510 {
+        &self.processor_port
+    }
+    pub fn set_processor_port_input(&mut self, value: u8) {
+        self.processor_port.set_input(value);
+    }
 
     #[must_use]
     pub fn bank_lines(&self) -> C64BankLines {
@@ -60,19 +70,25 @@ impl C64 {
     }
 
     pub fn load_basic_rom(&mut self, rom: &[u8]) -> Result<(), &'static str> {
-        if rom.len() != 0x2000 { return Err("BASIC ROM must be exactly 8192 bytes"); }
+        if rom.len() != 0x2000 {
+            return Err("BASIC ROM must be exactly 8192 bytes");
+        }
         self.basic_rom.copy_from_slice(rom);
         Ok(())
     }
 
     pub fn load_kernal_rom(&mut self, rom: &[u8]) -> Result<(), &'static str> {
-        if rom.len() != 0x2000 { return Err("KERNAL ROM must be exactly 8192 bytes"); }
+        if rom.len() != 0x2000 {
+            return Err("KERNAL ROM must be exactly 8192 bytes");
+        }
         self.kernal_rom.copy_from_slice(rom);
         Ok(())
     }
 
     pub fn load_char_rom(&mut self, rom: &[u8]) -> Result<(), &'static str> {
-        if rom.len() != 0x1000 { return Err("character ROM must be exactly 4096 bytes"); }
+        if rom.len() != 0x1000 {
+            return Err("character ROM must be exactly 4096 bytes");
+        }
         self.char_rom.copy_from_slice(rom);
         Ok(())
     }
@@ -82,7 +98,9 @@ impl C64 {
     /// I/O space currently returns zero until the C64 device bus is connected.
     #[must_use]
     pub fn read(&self, address: u16) -> u8 {
-        if let Some(value) = self.read_cpu_port(address) { return value; }
+        if let Some(value) = self.read_cpu_port(address) {
+            return value;
+        }
         let lines = self.bank_lines();
         match address {
             BASIC_START..=BASIC_END if lines.loram && lines.hiram => {
@@ -102,7 +120,9 @@ impl C64 {
     /// Writes the C64 CPU-visible address space. ROM overlays do not block RAM
     /// writes underneath them; I/O writes are reserved for the future device bus.
     pub fn write(&mut self, address: u16, value: u8) {
-        if self.write_cpu_port(address, value) { return; }
+        if self.write_cpu_port(address, value) {
+            return;
+        }
         let lines = self.bank_lines();
         if (IO_START..=IO_END).contains(&address) && (lines.loram || lines.hiram) && lines.charen {
             return;
