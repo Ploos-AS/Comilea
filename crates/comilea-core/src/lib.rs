@@ -7,6 +7,7 @@
 )]
 
 pub mod c64;
+pub mod c64_io;
 pub mod opcode;
 pub mod port6510;
 pub use opcode::{opcode_info, OpcodeClass, OpcodeInfo, OFFICIAL_OPCODE_COUNT};
