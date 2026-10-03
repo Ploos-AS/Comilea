@@ -71,3 +71,14 @@ CI uses one canonical 151-opcode exact-bus gate against the immutable SingleStep
 M0.14 qualifies the documented **NMOS 6502 CPU instruction bus behavior represented by the pinned vectors**. It does not claim undocumented-opcode conformance, asynchronous line-level interrupt timing, or complete 6510/C64 machine conformance.
 
 M0.14 also does not by itself qualify C64 machine behavior. The 6510 I/O port at `$0000/$0001`, PLA/memory banking, VIC-II, SID, CIA devices, interrupts at machine timing boundaries and complete C64 system timing remain separate machine-level work.
+
+
+## M0.15 Commodore machine architecture
+
+Comilea is a Rust emulator family for Commodore computers. C64 is the first reference machine, not a constraint on the reusable core.
+
+The architecture follows a strict boundary: reusable deterministic execution, tracing and qualification infrastructure may be shared, while hardware behavior belongs to concrete machine profiles. C64 correctness must not be weakened to fit another Commodore model.
+
+The first C64 profile is `c64::C64`. It owns the MOS 6510 processor port at `$0000/$0001`; the generic CPU qualification `Machine` remains a flat-memory harness so NMOS 6502 conformance can be tested independently of any Commodore motherboard.
+
+Future C64 PLA banking, VIC-II, SID, CIA and machine timing belong behind the C64 profile. Future VIC-20, Plus/4 and C128 profiles should share components only where the emulated hardware or emulator infrastructure genuinely has common behavior. Abstractions should be extracted from demonstrated commonality rather than imposed on C64 in advance.
