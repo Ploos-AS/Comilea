@@ -72,7 +72,8 @@ impl C64 {
     /// Loads a caller-supplied C64 BASIC ROM.
     ///
     /// # Errors
-    /// Returns an error unless the image is exactly 8192 bytes.\n    pub fn load_basic_rom(&mut self, rom: &[u8]) -> Result<(), &'static str> {
+    /// Returns an error unless the image is exactly 8192 bytes.
+    pub fn load_basic_rom(&mut self, rom: &[u8]) -> Result<(), &'static str> {
         if rom.len() != 0x2000 {
             return Err("BASIC ROM must be exactly 8192 bytes");
         }
