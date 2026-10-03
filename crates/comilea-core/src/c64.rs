@@ -84,7 +84,8 @@ impl C64 {
     /// Loads a caller-supplied C64 KERNAL ROM.
     ///
     /// # Errors
-    /// Returns an error unless the image is exactly 8192 bytes.\n    pub fn load_kernal_rom(&mut self, rom: &[u8]) -> Result<(), &'static str> {
+    /// Returns an error unless the image is exactly 8192 bytes.
+    pub fn load_kernal_rom(&mut self, rom: &[u8]) -> Result<(), &'static str> {
         if rom.len() != 0x2000 {
             return Err("KERNAL ROM must be exactly 8192 bytes");
         }
@@ -95,7 +96,8 @@ impl C64 {
     /// Loads a caller-supplied C64 character ROM.
     ///
     /// # Errors
-    /// Returns an error unless the image is exactly 4096 bytes.\n    pub fn load_char_rom(&mut self, rom: &[u8]) -> Result<(), &'static str> {
+    /// Returns an error unless the image is exactly 4096 bytes.
+    pub fn load_char_rom(&mut self, rom: &[u8]) -> Result<(), &'static str> {
         if rom.len() != 0x1000 {
             return Err("character ROM must be exactly 4096 bytes");
         }
